@@ -1,4 +1,6 @@
-from arcade import View
+from arcade import View, Camera2D, draw_lbwh_rectangle_filled
+
+TILE_SIZE = 32
 
 
 class Tile:
@@ -45,6 +47,29 @@ class ChessehcView(View):
     def __init__(self):
         super().__init__()
         self.board = Board(8, 8)
-
         self.board.mirror_slice = -2
+
+        self.camera = Camera2D()
+        self.camera.position = (
+            TILE_SIZE * self.board.width / 2.0,
+            TILE_SIZE * self.board.height / 2.0,
+        )
+
         print(str(self.board))
+
+    def on_draw(self) -> bool | None:
+        self.clear()
+        with self.camera.activate():
+            draw_lbwh_rectangle_filled(
+                -15,
+                -15,
+                self.board.width * TILE_SIZE + 30,
+                self.board.height * TILE_SIZE + 30,
+                (152, 118, 84),
+            )
+            for x in range(self.board.width):
+                for y in range(self.board.height):
+                    color = (255, 255, 255) if (x + y) % 2 == 0 else (0, 0, 0)
+                    draw_lbwh_rectangle_filled(
+                        x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, color
+                    )
