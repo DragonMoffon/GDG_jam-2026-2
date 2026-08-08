@@ -29,7 +29,7 @@ class Board:
             x = (2 * self.mirror_slice) - 1 - x
 
         if self.mirror_slice <= 0 and self.width + self.mirror_slice <= x:
-            return None
+            x = (2 * (self.width + self.mirror_slice)) - 1 - x
 
         if not (0 <= x < self.width) or not (0 <= y < self.height):
             return None
@@ -46,5 +46,5 @@ class ChessehcView(View):
         super().__init__()
         self.board = Board(8, 8)
 
-        self.board.mirror_slice = 0
+        self.board.mirror_slice = -2
         print(str(self.board))
