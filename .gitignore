@@ -1,0 +1,32 @@
+# Compiled python
+*.pyc
+.pytest_cache
+*.egg-info
+build
+dist
+.libs/
+__pycache__/
+
+# Visual Studio
+.vs
+*.pyproj
+*.pyproj.user
+*.sln
+*.code-workspace
+.mypy_cache/
+.vscode/
+
+# Pycharm
+.idea/
+
+# Debug files
+debug/
+
+# Builds
+imgui.ini
+charm.build/
+charm.onefile-build/
+charm.dist/
+charm.exe/
+charm.dist.zip/
+charm/debug.py/
