@@ -1,10 +1,12 @@
 from enum import IntEnum, auto
 from tomllib import load as load_toml
 
-from arcade import XYWH, LBWH, View, Camera2D, draw_lbwh_rectangle_filled, load_texture, draw_texture_rect
+from arcade import XYWH, LBWH, Text, View, Camera2D, draw_lbwh_rectangle_filled, load_texture, draw_texture_rect
+import arcade
 from arcade.types import Color
 
 T_SIZE = 16
+MOUSE_BUFFER = 0.15
 
 FULL_TEXTURES = tuple(
     load_texture(f"resources/chessehc/{piece}.png")
@@ -17,16 +19,18 @@ HOLLOW_TEXTURES = tuple(
 with open("resources/chessehc/boards.toml", "rb") as fp:
     BOARDS: dict[str, list[dict[str, int]]] = load_toml(fp)
 
-class colors:
-    first_tile = (202, 166, 131)
-    first_piece = (255, 255, 255, 255)
-    first_mirror_tile = (147, 172, 236)
-    first_mirror_piece = (255, 255, 255, 255)
+DEBUG_FONT = "GohuFont 11 Nerd Font Mono"
 
-    second_tile = (76, 47, 12)
-    second_piece = (0, 0, 0, 255)
-    second_mirror_tile = (12, 24, 76)
-    second_mirror_piece = (0, 0, 0, 255)
+class colors:
+    first_tile = Color(202, 166, 131)
+    first_piece = Color(255, 255, 255, 255)
+    first_mirror_tile = Color(147, 172, 236)
+    first_mirror_piece = Color(255, 255, 255, 255)
+
+    second_tile = Color(76, 47, 12)
+    second_piece = Color(0, 0, 0, 255)
+    second_mirror_tile = Color(12, 24, 76)
+    second_mirror_piece = Color(0, 0, 0, 255)
 
 class PieceType(IntEnum):
     pawn = 0
@@ -57,6 +61,8 @@ class Board:
 
         self.horizontal_mirror: int | None = None # Mirror things horizontally
         self.vertical_mirror: int | None = None # Mirror things vertically
+
+        self.alpha = 255
 
     def __getitem__(self, location: tuple[int, int], /) -> Tile | None:
         x = self.mirror_axis(location[0], self.width, self.horizontal_mirror)
@@ -111,7 +117,7 @@ class Board:
             -5,
             self.width * T_SIZE + 10,
             self.height * T_SIZE + 10,
-            (152, 118, 84),
+            (152, 118, 84, self.alpha),
         )
 
         rx, ry = self.get_mirrored_ranges()
@@ -123,9 +129,9 @@ class Board:
                 mirrored = self.is_location_mirrored((x, y))
                 second_tile = bool((tx + ty) % 2)
                 if mirrored:
-                    tc = colors.second_mirror_tile if second_tile else colors.first_mirror_tile
+                    tc = colors.second_mirror_tile.replace(a = self.alpha) if second_tile else colors.first_mirror_tile.replace(a = self.alpha)
                 else:
-                    tc = colors.second_tile if second_tile else colors.first_tile
+                    tc = colors.second_tile.replace(a = self.alpha) if second_tile else colors.first_tile.replace(a = self.alpha)
                 draw_lbwh_rectangle_filled(x * T_SIZE, y * T_SIZE, T_SIZE, T_SIZE, tc)
 
                 if tile.type is None or tile.team is None:
@@ -137,7 +143,7 @@ class Board:
                 else:
                     pc = colors.second_piece if second_piece else colors.first_piece
 
-                draw_texture_rect(FULL_TEXTURES[tile.type], LBWH(x * T_SIZE, y * T_SIZE, T_SIZE,T_SIZE), color=Color.from_iterable(pc), pixelated=True)
+                draw_texture_rect(FULL_TEXTURES[tile.type], LBWH(x * T_SIZE, y * T_SIZE, T_SIZE,T_SIZE), color=Color.from_iterable(pc), pixelated=True, alpha = self.alpha)
 
 class ChessehcView(View):
     def __init__(self):
@@ -155,7 +161,72 @@ class ChessehcView(View):
             T_SIZE * self.board.height / 2.0,
         )
 
+        self.tile_x: int | None = None
+        self.tile_y: int | None = None
+        self.intratile_x: float | None = None
+        self.intratile_y: float | None = None
+
+        self.debug = False
+        self.debug_text = Text("DEBUG", 5, self.height - 5, font_size = 11, anchor_y = "top", font_name = DEBUG_FONT, multiline = True, width = self.width / 2)
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> bool | None:
+        x, y = int(x), int(y)  # typing is lying these are floats until you do this
+        cam_x, cam_y, _ = self.camera.unproject((x, y))
+        intratile_x, intratile_y = round(cam_x / T_SIZE % 1, 3), round(cam_y / T_SIZE % 1, 3)
+        cam_x, cam_y = int(cam_x / T_SIZE), int(cam_y / T_SIZE)
+        tile = self.board.get((cam_x, cam_y))
+        if tile and not self.board.is_location_mirrored((tile.x, tile.y)):
+            self.tile_x = tile.x
+            self.tile_y = tile.y
+            self.intratile_x = intratile_x
+            self.intratile_y = intratile_y
+            self.debug_text.text = f"({x}, {y})\nTILE: ({tile.x}, {tile.y})\nINTRA: ({intratile_x}, {intratile_y})"
+        else:
+            self.tile_x, self.tile_y, self.intratile_x, self.intratile_y = None, None, None, None
+            self.debug_text.text = f"({x}, {y})\nTILE: None)"
+
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
+        if self.tile_x is None:  # I'm not checking all the variables here but the assumption is tile_y and the intratile_'s are also None
+            self.board.horizontal_mirror = None
+            self.board.vertical_mirror = None
+            return
+
+        dir = None
+        if self.intratile_x < MOUSE_BUFFER:
+            dir = "left"
+        elif self.intratile_x > (1 - MOUSE_BUFFER):
+            dir = "right"
+        elif self.intratile_y < MOUSE_BUFFER:
+            dir = "bottom"
+        elif self.intratile_y > (1 - MOUSE_BUFFER):
+            dir = "top"
+        else:
+            pass
+
+        match dir:
+            case "left":
+                self.board.horizontal_mirror = self.tile_x
+                self.board.vertical_mirror = None
+            case "right":
+                self.board.horizontal_mirror = -(7 - self.tile_x)
+                self.board.vertical_mirror = None
+            case "bottom":
+                self.board.horizontal_mirror = None
+                self.board.vertical_mirror = self.tile_y
+            case "top":
+                self.board.horizontal_mirror = None
+                self.board.vertical_mirror = -(7 - self.tile_y)
+            case _:
+                self.board.horizontal_mirror = None
+                self.board.vertical_mirror = None
+
+    def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
+        if symbol == arcade.key.D:
+            self.debug = not self.debug
+
     def on_draw(self) -> bool | None:
         self.clear()
         with self.camera.activate():
             self.board.draw()
+        if self.debug:
+            self.debug_text.draw()
