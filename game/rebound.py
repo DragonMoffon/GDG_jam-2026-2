@@ -1,10 +1,12 @@
+from math import cos, pi, sin, sqrt
 from random import uniform
-from math import pi, cos, sin, sqrt
 
-from arcade import View, XYWH, Sprite, Camera2D, draw_sprite, draw_circle_filled, key
-from arcade.math import lerp_2d
+from arcade import XYWH, Camera2D, Sprite, View, draw_circle_filled, draw_sprite, key
 from arcade.clock import GLOBAL_FIXED_CLOCK
+from arcade.math import lerp_2d
 from arcade.types import Point2
+
+from .context import nav
 
 PLAYER_SPEED = 45
 MAX_SPEED = 500
@@ -14,11 +16,12 @@ H_WIDTH = 0.5 * WIDTH
 HEIGHT = 144
 H_HEIGHT = 0.5 * HEIGHT
 
+
 def accelerate(acc: float, vel: float) -> float:
-    return acc * sqrt(1 - (vel/MAX_SPEED)**2) if vel < MAX_SPEED else 0.0
+    return acc * sqrt(1 - (vel / MAX_SPEED) ** 2) if vel < MAX_SPEED else 0.0
+
 
 class Projectile:
-
     def __init__(self) -> None:
         r = uniform(-pi, pi)
         c, s = cos(r), sin(r)
@@ -36,7 +39,7 @@ class Projectile:
 
         x = sx + dt * dx
         y = sy + dt * dy
-        speed = (dx**2 + dy**2)**0.25
+        speed = (dx**2 + dy**2) ** 0.25
         self._radius = radius = speed
 
         if x < radius - H_WIDTH:
@@ -62,13 +65,12 @@ class Projectile:
         x, y = lerp_2d(self._p_loc, self._location, t)
         draw_circle_filled(x, y, self._radius, (255, 255, 255), num_segments=16)
 
-class ReboundView(View):
 
+class ReboundView(View):
     def __init__(self) -> None:
         super().__init__()
 
         self.camera = Camera2D(projection=XYWH(0, 0, WIDTH, HEIGHT), position=(0.0, 0.0))
-
 
         self.player = Sprite("resources/rebound/knight.png")
         self.sphere = Projectile()
@@ -89,6 +91,8 @@ class ReboundView(View):
                 self.horizontal = max(-1, self.horizontal - 1)
             case key.SPACE:
                 self.impulse = self.player.position
+            case key.BACKSPACE:
+                nav.pop()
 
     def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
         match symbol:
@@ -107,7 +111,7 @@ class ReboundView(View):
         dy = self.vertical * PLAYER_SPEED * delta_time
 
         if dx or dy:
-            speed = (dx**2 + dy**2)**0.5
+            speed = (dx**2 + dy**2) ** 0.5
             dx = dx / speed
             dy = dy / speed
 
@@ -115,7 +119,7 @@ class ReboundView(View):
         if self.impulse is not None:
             dist_x = self.sphere._location[0] - self.impulse[0]
             dist_y = self.sphere._location[1] - self.impulse[1]
-            dist = (dist_x**2 + dist_y**2)**0.5
+            dist = (dist_x**2 + dist_y**2) ** 0.5
 
             if self.sphere._radius < dist:
                 nx = dist_x / dist
@@ -123,12 +127,11 @@ class ReboundView(View):
                 tx = -ny
                 ty = nx
                 vx, vy = self.sphere._velocity
-                v = (vx**2 + vy**2)**0.5
-
+                v = (vx**2 + vy**2) ** 0.5
 
                 nv = abs(nx * vx + ny * vy)
                 tv = tx * vx + ty * vy
-                acc = (nv + accelerate(ACCELERATION, v))
+                acc = nv + accelerate(ACCELERATION, v)
                 print(acc, nv)
 
                 self.sphere._velocity = tv * tx + nx * acc, tv * ty + ny * acc

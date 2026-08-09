@@ -1,9 +1,21 @@
 from enum import IntEnum, auto
 from tomllib import load as load_toml
 
-from arcade import XYWH, LBWH, Text, View, Camera2D, draw_lbwh_rectangle_filled, load_texture, draw_texture_rect
 import arcade
+from arcade import (
+    LBWH,
+    XYWH,
+    Camera2D,
+    Text,
+    View,
+    draw_lbwh_rectangle_filled,
+    draw_texture_rect,
+    load_texture,
+    key,
+)
 from arcade.types import Color
+
+from .context import nav
 
 T_SIZE = 16
 MOUSE_BUFFER = 0.15
@@ -21,6 +33,7 @@ with open("resources/chessehc/boards.toml", "rb") as fp:
 
 DEBUG_FONT = "GohuFont 11 Nerd Font Mono"
 
+
 class colors:
     first_tile = Color(202, 166, 131)
     first_piece = Color(255, 255, 255, 255)
@@ -32,6 +45,7 @@ class colors:
     second_mirror_tile = Color(12, 24, 76)
     second_mirror_piece = Color(0, 0, 0, 255)
 
+
 class PieceType(IntEnum):
     pawn = 0
     rook = auto()
@@ -40,9 +54,11 @@ class PieceType(IntEnum):
     queen = auto()
     king = auto()
 
+
 class Team(IntEnum):
     first = 0
     second = auto()
+
 
 class Tile:
     def __init__(self, x: int, y: int):
@@ -50,6 +66,7 @@ class Tile:
         self.y: int = y
         self.type: PieceType | None = None
         self.team: Team | None = None
+
 
 class Board:
     def __init__(self, width: int, height: int) -> None:
@@ -59,8 +76,8 @@ class Board:
             tuple(Tile(x, y) for y in range(self.height)) for x in range(self.width)
         )
 
-        self.horizontal_mirror: int | None = None # Mirror things horizontally
-        self.vertical_mirror: int | None = None # Mirror things vertically
+        self.horizontal_mirror: int | None = None  # Mirror things horizontally
+        self.vertical_mirror: int | None = None  # Mirror things vertically
 
         self.alpha = 255
 
@@ -87,10 +104,7 @@ class Board:
     def is_axis_mirrored(self, a: int, size: int, mirror: int | None) -> bool:
         if mirror is None:
             return False
-        return (
-            (0 <= mirror and a < mirror)
-            or (mirror <= 0 and size + mirror <= a)
-        )
+        return (0 <= mirror and a < mirror) or (mirror <= 0 and size + mirror <= a)
 
     def is_location_mirrored(self, location: tuple[int, int]):
         return bool(
@@ -102,13 +116,13 @@ class Board:
         if mirror is None:
             return range(size)
         if mirror == 0:
-            return range(-size, 2*size)
-        return  range(0, 2 * (size + mirror)) if mirror <= 0 else range(2 * mirror - size, size)
+            return range(-size, 2 * size)
+        return range(0, 2 * (size + mirror)) if mirror <= 0 else range(2 * mirror - size, size)
 
     def get_mirrored_ranges(self) -> tuple[range, range]:
         return (
             self.get_axis_range(self.width, self.horizontal_mirror),
-            self.get_axis_range(self.height, self.vertical_mirror)
+            self.get_axis_range(self.height, self.vertical_mirror),
         )
 
     def draw(self):
@@ -129,9 +143,17 @@ class Board:
                 mirrored = self.is_location_mirrored((x, y))
                 second_tile = bool((tx + ty) % 2)
                 if mirrored:
-                    tc = colors.second_mirror_tile.replace(a = self.alpha) if second_tile else colors.first_mirror_tile.replace(a = self.alpha)
+                    tc = (
+                        colors.second_mirror_tile.replace(a=self.alpha)
+                        if second_tile
+                        else colors.first_mirror_tile.replace(a=self.alpha)
+                    )
                 else:
-                    tc = colors.second_tile.replace(a = self.alpha) if second_tile else colors.first_tile.replace(a = self.alpha)
+                    tc = (
+                        colors.second_tile.replace(a=self.alpha)
+                        if second_tile
+                        else colors.first_tile.replace(a=self.alpha)
+                    )
                 draw_lbwh_rectangle_filled(x * T_SIZE, y * T_SIZE, T_SIZE, T_SIZE, tc)
 
                 if tile.type is None or tile.team is None:
@@ -143,17 +165,24 @@ class Board:
                 else:
                     pc = colors.second_piece if second_piece else colors.first_piece
 
-                draw_texture_rect(FULL_TEXTURES[tile.type], LBWH(x * T_SIZE, y * T_SIZE, T_SIZE,T_SIZE), color=Color.from_iterable(pc), pixelated=True, alpha = self.alpha)
+                draw_texture_rect(
+                    FULL_TEXTURES[tile.type],
+                    LBWH(x * T_SIZE, y * T_SIZE, T_SIZE, T_SIZE),
+                    color=Color.from_iterable(pc),
+                    pixelated=True,
+                    alpha=self.alpha,
+                )
+
 
 class ChessehcView(View):
     def __init__(self):
         super().__init__()
         self.board = Board(8, 8)
-        for data in BOARDS.get('regular', ()):
+        for data in BOARDS.get("regular", ()):
             if not (tile := self.board[data.get("x", -1), data.get("y", -1)]):
                 continue
-            tile.type = PieceType(data['type']) if 'type' in data else None
-            tile.team = Team(data['team']) if 'team' in data else None
+            tile.type = PieceType(data["type"]) if "type" in data else None
+            tile.team = Team(data["team"]) if "team" in data else None
 
         self.camera = Camera2D(projection=XYWH(0, 0, 256, 144))
         self.camera.position = (
@@ -167,7 +196,16 @@ class ChessehcView(View):
         self.intratile_y: float | None = None
 
         self.debug = False
-        self.debug_text = Text("DEBUG", 5, self.height - 5, font_size = 11, anchor_y = "top", font_name = DEBUG_FONT, multiline = True, width = self.width / 2)
+        self.debug_text = Text(
+            "DEBUG",
+            5,
+            self.height - 5,
+            font_size=11,
+            anchor_y="top",
+            font_name=DEBUG_FONT,
+            multiline=True,
+            width=self.width / 2,
+        )
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> bool | None:
         x, y = int(x), int(y)  # typing is lying these are floats until you do this
@@ -180,13 +218,17 @@ class ChessehcView(View):
             self.tile_y = tile.y
             self.intratile_x = intratile_x
             self.intratile_y = intratile_y
-            self.debug_text.text = f"({x}, {y})\nTILE: ({tile.x}, {tile.y})\nINTRA: ({intratile_x}, {intratile_y})"
+            self.debug_text.text = (
+                f"({x}, {y})\nTILE: ({tile.x}, {tile.y})\nINTRA: ({intratile_x}, {intratile_y})"
+            )
         else:
             self.tile_x, self.tile_y, self.intratile_x, self.intratile_y = None, None, None, None
             self.debug_text.text = f"({x}, {y})\nTILE: None)"
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
-        if self.tile_x is None:  # I'm not checking all the variables here but the assumption is tile_y and the intratile_'s are also None
+        if (
+            self.tile_x is None
+        ):  # I'm not checking all the variables here but the assumption is tile_y and the intratile_'s are also None
             self.board.horizontal_mirror = None
             self.board.vertical_mirror = None
             return
@@ -221,8 +263,11 @@ class ChessehcView(View):
                 self.board.vertical_mirror = None
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
-        if symbol == arcade.key.D:
-            self.debug = not self.debug
+        match symbol:
+            case key.D:
+                self.debug = not self.debug
+            case key.BACKSPACE:
+                nav.pop()
 
     def on_draw(self) -> bool | None:
         self.clear()
