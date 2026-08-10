@@ -2,6 +2,7 @@ from arcade import View, draw_text
 
 from .chessehc import ChessehcView
 from .context import nav
+from .pymunk_test import BreakoutView
 from .rebound import ReboundView
 
 
@@ -43,4 +44,4 @@ class MenuView(View):
         if self.mouse_x < self.center_y:
             nav.push(ChessehcView())
         else:
-            nav.push(ReboundView())
+            nav.push(BreakoutView())
