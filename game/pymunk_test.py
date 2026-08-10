@@ -38,7 +38,11 @@ def setup_level(
     space: pymunk.Space, player: pymunk.Body, start: tuple[float, float], size: tuple[float, float]
 ):
     for s in list(space.shapes):
-        if s.body.body_type == pymunk.Body.DYNAMIC and s.body is not player:
+        if (
+            s.body.body_type == pymunk.Body.DYNAMIC
+            and s.body is not player
+            or s.collision_type == CollisionType.brick
+        ):
             space.remove(s.body, s)
 
     spawn_ball(space, player.position + (0, 40), pymunk.Vec2d(random.choice((1, -1)), 10))
