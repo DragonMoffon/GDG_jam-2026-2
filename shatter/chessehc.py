@@ -1,7 +1,6 @@
 from enum import IntEnum, auto
 from tomllib import load as load_toml
 
-import arcade
 from arcade import (
     LBWH,
     XYWH,
@@ -10,12 +9,12 @@ from arcade import (
     View,
     draw_lbwh_rectangle_filled,
     draw_texture_rect,
-    load_texture,
     key,
+    load_texture,
 )
 from arcade.types import Color
 
-from .context import nav
+from .navigation import navigation as nav
 
 T_SIZE = 16
 MOUSE_BUFFER = 0.15
