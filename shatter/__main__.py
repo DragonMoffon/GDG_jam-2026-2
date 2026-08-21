@@ -1,15 +1,15 @@
 from arcade import load_font
 
+from resources import setup
 from .navigation import navigation
 from .window import Window
+from .views import MenuView
 
 
 def main():
-    # Load debug font
-    load_font("resources/generic/gohu.ttf")
-
-    win = Window(title="Game Dev Guild Jam 2026 Sem 2")
-    # navigation.setup(,win)
+    win = Window()
+    setup()
+    navigation.setup(MenuView(), win)
     win.run()
 
 
