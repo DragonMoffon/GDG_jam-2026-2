@@ -14,6 +14,10 @@ fonts: tuple[Path, ...] = tuple(
     if (pth.suffix == ".ttf" or pth.suffix == ".otf") and pth.is_file()
 )
 
+shaders: dict[str, Path] = {
+    pth.stem: pth for pth in (root / "shaders").iterdir() if pth.suffix == ".glsl" and pth.is_file()
+}
+
 
 def setup():
     for font in fonts:
@@ -26,3 +30,7 @@ def get_texture(name: str) -> Texture:
 
 def get_spritesheet(name: str) -> SpriteSheet:
     return load_spritesheet(textures[name])
+
+
+def get_shader_path(name: str) -> Path:
+    return shaders[name]

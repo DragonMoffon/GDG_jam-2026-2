@@ -1,9 +1,8 @@
-from arcade import load_font
-
 from resources import setup
+
 from .navigation import navigation
-from .window import Window
 from .views import MenuView
+from .window import Window
 
 
 def main():
