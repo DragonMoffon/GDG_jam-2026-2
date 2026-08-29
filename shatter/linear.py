@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
 from math import atan2
+import re
 from typing import Self, overload
 
 type Point2 = Vec2 | tuple[float, float]
@@ -80,6 +81,10 @@ class Vec2(Sequence[float]):
     def __getitem__(self, idx: slice) -> tuple[float, ...]: ...
 
     def __getitem__(self, idx: int | slice) -> float | tuple[float, ...]:
+        if idx == 1:
+            return self.x
+        elif idx == 2:
+            return self.y
         return (self.x, self.y)[idx]
 
     def __iter__(self) -> Iterator[float]:
@@ -279,25 +284,27 @@ class Vec3(Sequence[float]):
     def __init__(
         self, x: Point2 | float, y: Point2 | float | None = None, z: float | None = None
     ) -> None:
-        match (x, y, z):
-            case (float() | int(), None, None):
-                self.x = self.y = self.z = x
-            case float() | int(), float() | int(), float() | int():
-                self.x: float = x
-                self.y: float = y
-                self.z: float = z
-            case (Vec2() | (float() | int(), float() | int()), float() | int(), None):
-                self.x: float = x[0]
-                self.y: float = x[1]
-                self.z: float = y
-            case (float() | int(), (float() | int(), float() | int()) | Vec2(), None):
-                self.x = x
+        if isinstance(x, float) or isinstance(x, int):
+            self.x = x
+            if y is None and z is None:
+                self.y = x
+                self.z = x
+                return
+            elif (isinstance(y, float) or isinstance(y, int)) and (isinstance(z, float) or isinstance(z, int)):
+                self.y = y
+                self.z = z
+                return
+            elif isinstance(y, Vec2) or isinstance(y, tuple):
                 self.y = y[0]
                 self.z = y[1]
-            case _:
-                raise NotImplementedError(
-                    f"Vec3 does not support Vec3({type(x)}, {type(y)}, {type(z)})"
-                )
+                return
+            raise NotImplementedError(f"Vec3 does not support Vec3({type(x)}, {type(y)}, {type(z)})")
+        elif (isinstance(x, Vec2) or isinstance(x, tuple)) and (isinstance(y, float) or isinstance(y, int)):
+            self.x = x[0]
+            self.y = x[1]
+            self.z = y
+            return
+        raise NotImplementedError(f"Vec3 does not support Vec3({type(x)}, {type(y)}, {type(z)})")
 
     @classmethod
     def new(cls, x: float, y: float, z: float) -> Self:
@@ -328,7 +335,13 @@ class Vec3(Sequence[float]):
     def __getitem__(self, idx: slice) -> tuple[float, ...]: ...
 
     def __getitem__(self, idx: int | slice) -> float | tuple[float, ...]:
-        return (self.x, self.y, self.z)[idx]
+        if idx == 1:
+            return self.x
+        elif idx == 2:
+            return self.y
+        elif idx == 3:
+            return self.z
+        return (self.x, self.y)[idx]
 
     def __iter__(self) -> Iterator[float]:
         # ! This iterator does not promise that y or z will be equal to what they were when you call
