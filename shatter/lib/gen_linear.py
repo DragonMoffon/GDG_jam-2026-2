@@ -9,6 +9,7 @@ from typing import Iterable, Literal
 # * __init__
 # ! arg/radians and angle for Vec2 (? Vec3 and Vec4 as 2-tuple and 3-tuple)
 # * new method
+# * update method
 # * frozen property
 # * length/norm property
 # ! clockwise / counter-clockwise for Vec2
@@ -66,6 +67,9 @@ _NEW_STR = """
         vec = cls.__new__(cls)
 {vec}
         return vec
+
+    def update(self, {args}) -> None:
+{self}
 """
 
 _FROZ_STR = """
@@ -137,7 +141,6 @@ _VEC_STR = """
 
     def cross(self, other: Point{dim}, /) -> {cross_rtrn}:
 {cross}
-
     def rcross(self, other: Point{dim}, /) -> {cross_rtrn}:
 {rcross}
 """
@@ -317,7 +320,7 @@ def generate_init(dim: Dim):
 
     chrs = axis[:dim]
     yield _INIT_STR.format(dim=dim, args=", ".join(get_init_args(dim)), init="".join(get_init_branches(dim, get_init_combinations(dim))))
-    yield _NEW_STR.format(dim=dim, args=", ".join(f"{c}: float = 0.0" for c in chrs), vec="\n".join(f"        vec.{char} = {char}" for char in chrs))
+    yield _NEW_STR.format(dim=dim, args=", ".join(f"{c}: float = 0.0" for c in chrs), vec="\n".join(f"        vec.{char} = {char}" for char in chrs), self="\n".join(f"        self.{char} = {char}" for char in chrs))
     yield _FROZ_STR.format(tpl=", ".join("float" for _ in chrs), rtrn=", ".join(f"self.{char}" for char in chrs))
 
 def generate_length(dim: Dim):

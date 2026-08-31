@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import Enum
 from typing import Literal
 
 from .linear import Vec2
 
 
-class Shape: ...
+@dataclass
+class Shape:
+    def __post_init__(self):
+        self.type = ShapeType(type(self))
 
 
 @dataclass(slots=True)
@@ -18,7 +22,7 @@ class Line(Shape):
 
     @property
     def normal(self) -> Vec2:
-        return self.tangent.ccw
+        return Vec2.new(-self.tangent.y, self.tangent.x)
 
     @property
     def radius(self) -> float:
@@ -42,6 +46,10 @@ class Circle(Shape):
 class Polygon(Shape):
     pass
 
+class ShapeType(Enum):
+    LINE = Line
+    CIRCLE = Circle
+    POLYGON = Polygon
 
 @dataclass(slots=True)
 class Collision:
@@ -58,7 +66,7 @@ type CollisionFunction = Callable[..., Literal[False] | Collision]
 def line_circle_collision(line: Line, circle: Circle) -> Literal[False] | Collision:
     diff = line.center - circle.center
     length = abs(diff)
-    along = line.tangent @ diff
+    along = line.tangent.dot(diff)
     nabla = along**2 - length**2 + circle.radius**2
 
     if nabla < 0:
@@ -90,17 +98,10 @@ def circle_line_collision(circle: Circle, line: Line) -> Literal[False] | Collis
 def unimplemented_collision(a: Shape, b: Shape):
     raise NotImplementedError(f"No collision function implemented for {type(a)} and {type(b)}")
 
-
-_COLLISIONS: dict[tuple[type[Shape], type[Shape]], CollisionFunction] = {
-    (Line, Circle): line_circle_collision,
-    (Circle, Line): circle_line_collision,
-}
-
-
 def collide(a: Shape, b: Shape) -> Literal[False] | Collision:
-    match (a, b):
-        case Line(), Circle():
-            return line_circle_collision(a, b)
-        case Circle(), Line():
-            return circle_line_collision(a, b)
+    match (a.type, b.type):
+        case ShapeType.LINE, ShapeType.CIRCLE:
+            return line_circle_collision(a, b) # type: ignore
+        case ShapeType.CIRCLE, ShapeType.LINE:
+            return circle_line_collision(a, b) # type: ignore
     return False

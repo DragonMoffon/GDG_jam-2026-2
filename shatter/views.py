@@ -5,7 +5,9 @@ from arcade import Sprite, View, draw_circle_filled, draw_line, key
 
 from resources import get_spritesheet
 
+from .collision import Circle, Line, collide
 from .isometric import BillboardList, calculate_xy_intersection, create_isometric_camera
+from .linear import Vec2
 from .navigation import navigation
 
 
@@ -68,13 +70,10 @@ class GameView(View):
         self.mirror = Sprite(self.mirror_body[0], center_y=48)
         self.shadow = Sprite(self.mirror_shadow[0])
         self.mirror.depth = 48
+        self.mirror_collider = Line(Vec2(self.shadow.center_x, self.shadow.center_y), Vec2(1.0, 0.0), 64.0)
 
-        self.shadow_angle: float = 0.0
-        self.shadow_width: float = 64.0
-
-        self.ball_position = (10, 0.0)
-        self.ball_velocity = (600.0, 0.0)
-        self.ball_radius = 40
+        self.ball = Circle(Vec2(100.0, 0.0), 40.0)
+        self.ball_velocity: Vec2 = Vec2(600.0, 0.0)
 
         self.billboards = BillboardList()
         self.billboards.extend((self.shadow, self.mirror))
@@ -84,30 +83,15 @@ class GameView(View):
         self.alt = False
 
     def on_update(self, delta_time: float) -> bool | None:
-        self.ball_position = (
-            self.ball_position[0] + delta_time * self.ball_velocity[0],
-            self.ball_position[1] + delta_time * self.ball_velocity[1],
-        )
+        prev = self.ball.center.frozen
+        self.ball.center += self.ball_velocity * delta_time
+        print(self.ball.center - prev, self.ball_velocity * delta_time)
+        if collision := collide(self.mirror_collider, self.ball):
+            along = collision.normal.dot(self.ball_velocity)
 
-        if collision := line_sphere_collision(
-            self.shadow.position,
-            (cos(self.shadow_angle - 0.5 * pi), sin(self.shadow_angle - 0.5 * pi)),
-            self.shadow_width,
-            self.ball_position,
-            self.ball_radius,
-        ):
-            print("collision ->", collision)
-            normal, depth = collision
-            along = normal[0] * self.ball_velocity[0] + normal[1] * self.ball_velocity[1]
             if along < 0:
-                self.ball_position = (
-                    self.ball_position[0] + normal[0] * depth,
-                    self.ball_position[1] + normal[1] * depth,
-                )
-                self.ball_velocity = (
-                    self.ball_velocity[0] - 2 * along * normal[0],
-                    self.ball_velocity[1] - 2 * along * normal[1],
-                )
+                self.ball.center += collision.normal * collision.depth
+                self.ball_velocity -= collision.normal * (2 * along)
 
     def on_draw(self) -> bool | None:
         self.clear(color=(125, 125, 125))
@@ -115,32 +99,23 @@ class GameView(View):
             draw_line(0.0, 0.0, 100.0, 0.0, (255, 0, 0), 4)
             draw_line(0.0, 0.0, 0.0, 100.0, (0, 255, 0), 4)
             draw_circle_filled(
-                self.ball_position[0], self.ball_position[1], self.ball_radius, (0, 0, 0, 125)
+                self.ball.center.x, self.ball.center.y, self.ball.radius, (0, 0, 0, 125)
             )
-            draw_line(
-                self.ball_position[0],
-                self.ball_position[1],
-                self.ball_position[0] + self.ball_velocity[0],
-                self.ball_position[1] + self.ball_velocity[1],
-                (255, 255, 255),
-                2,
-            )
-            draw_linebox(self.shadow.position, self.shadow_angle - 0.5 * pi, self.shadow_width)
             self.billboards.draw(pixelated=True)
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> bool | None:
         tx, ty = calculate_xy_intersection(self.camera, self.camera.unproject((x, y)))
 
         self.mirror.position = (tx, ty)
-        self.mirror.depth = 48
         self.shadow.position = (tx, ty)
-        self.shadow.depth = 0
+        self.mirror_collider.center.update(tx, ty)
 
         if self.alt:
             return
 
-        self.shadow_angle = atan2(ty, tx)
-        angle = degrees(self.shadow_angle) + 45
+        shadow_angle = atan2(ty, tx)
+        self.mirror_collider.tangent.update(cos(shadow_angle - 0.5*pi), sin(shadow_angle - 0.5*pi))
+        angle = degrees(shadow_angle) + 45
         frame = round(angle * 8 / 180)
 
         self.mirror.texture = self.mirror_body[frame]

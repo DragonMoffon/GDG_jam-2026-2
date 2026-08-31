@@ -33,6 +33,10 @@ class Vec2(Sequence[float]):
         vec.y = y
         return vec
 
+    def update(self, x: float = 0.0, y: float = 0.0) -> None:
+        self.x = x
+        self.y = y
+
     @property
     def frozen(self) -> tuple[float, float]:
         return self.x, self.y
@@ -89,7 +93,6 @@ class Vec2(Sequence[float]):
 
     def cross(self, other: Point2, /) -> float:
         return -self.y * other[0] + self.x * other[1]
-
 
     def rcross(self, other: Point2, /) -> float:
         return -other[1] * self.x + other[0] * self.y
@@ -412,7 +415,7 @@ class Vec2(Sequence[float]):
     yyyy = property(lambda self: Vec4.new(self.y, self.y, self.y, self.y))
 
 
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -472,6 +475,11 @@ class Vec3(Sequence[float]):
         vec.y = y
         vec.z = z
         return vec
+
+    def update(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
+        self.x = x
+        self.y = y
+        self.z = z
 
     @property
     def frozen(self) -> tuple[float, float, float]:
@@ -970,7 +978,7 @@ class Vec3(Sequence[float]):
     zzzz = property(lambda self: Vec4.new(self.z, self.z, self.z, self.z))
 
 
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -1129,6 +1137,12 @@ class Vec4(Sequence[float]):
         vec.z = z
         vec.w = w
         return vec
+
+    def update(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, w: float = 0.0) -> None:
+        self.x = x
+        self.y = y
+        self.z = z
+        self.w = w
 
     @property
     def frozen(self) -> tuple[float, float, float, float]:
@@ -1865,7 +1879,7 @@ class Vec4(Sequence[float]):
     wwww = property(lambda self: Vec4.new(self.w, self.w, self.w, self.w))
 
 
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
