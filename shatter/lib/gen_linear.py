@@ -11,6 +11,7 @@ from typing import Iterable, Literal
 # * new method
 # * frozen property
 # * length/norm property
+# ! clockwise / counter-clockwise for Vec2
 # *__abs__
 # * normalise/normalize and normalised/normalized
 # * dot
@@ -403,6 +404,7 @@ def generate_inplace(dim: Dim, name: str, op: str):
 _OPS = {
     "add": "+",
     "sub": "-",
+    "mul": "*",
     "truediv": "/",
     "mod": "%",
     "floordiv": "//",

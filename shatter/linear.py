@@ -216,6 +216,39 @@ class Vec2(Sequence[float]):
                 self.y -= other[1]
         return NotImplemented
 
+    def __mul__(self, other: Point2 | float, /) -> Vec2:
+        match other:
+            case Vec2():
+                return Vec2.new(self.x * other.x, self.y * other.y)
+            case float() | int():
+                return Vec2.new(self.x * other, self.y * other)
+            case (float() | int(), float() | int()):
+                return Vec2.new(self.x * other[0], self.y * other[1])
+        return NotImplemented
+
+    def __rmul__(self, other: Point2 | float, /) -> Vec2:
+        match other:
+            case Vec2():
+                return Vec2.new(other.x * self.x, other.y * self.y)
+            case float() | int():
+                return Vec2.new(other * self.x, other * self.y)
+            case (float() | int(), float() | int()):
+                return Vec2.new(other[0] * self.x, other[1] * self.y)
+        return NotImplemented
+
+    def __imul__(self, other: Point2 | float, /) -> Vec2:
+        match other:
+            case Vec2():
+                self.x *= other.x
+                self.y *= other.y
+            case float() | int():
+                self.x *= other
+                self.y *= other
+            case (float() | int(), float() | int()):
+                self.x *= other[0]
+                self.y *= other[1]
+        return NotImplemented
+
     def __truediv__(self, other: Point2 | float, /) -> Vec2:
         match other:
             case Vec2():
@@ -379,7 +412,7 @@ class Vec2(Sequence[float]):
     yyyy = property(lambda self: Vec4.new(self.y, self.y, self.y, self.y))
 
 
-    # -- SWIZZLE SETTERS --
+    # -- SWIZZLE SETTERS -- 
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -635,6 +668,42 @@ class Vec3(Sequence[float]):
                 self.x -= other[0]
                 self.y -= other[1]
                 self.z -= other[2]
+        return NotImplemented
+
+    def __mul__(self, other: Point3 | float, /) -> Vec3:
+        match other:
+            case Vec3():
+                return Vec3.new(self.x * other.x, self.y * other.y, self.z * other.z)
+            case float() | int():
+                return Vec3.new(self.x * other, self.y * other, self.z * other)
+            case (float() | int(), float() | int(), float() | int()):
+                return Vec3.new(self.x * other[0], self.y * other[1], self.z * other[2])
+        return NotImplemented
+
+    def __rmul__(self, other: Point3 | float, /) -> Vec3:
+        match other:
+            case Vec3():
+                return Vec3.new(other.x * self.x, other.y * self.y, other.z * self.z)
+            case float() | int():
+                return Vec3.new(other * self.x, other * self.y, other * self.z)
+            case (float() | int(), float() | int(), float() | int()):
+                return Vec3.new(other[0] * self.x, other[1] * self.y, other[2] * self.z)
+        return NotImplemented
+
+    def __imul__(self, other: Point3 | float, /) -> Vec3:
+        match other:
+            case Vec3():
+                self.x *= other.x
+                self.y *= other.y
+                self.z *= other.z
+            case float() | int():
+                self.x *= other
+                self.y *= other
+                self.z *= other
+            case (float() | int(), float() | int(), float() | int()):
+                self.x *= other[0]
+                self.y *= other[1]
+                self.z *= other[2]
         return NotImplemented
 
     def __truediv__(self, other: Point3 | float, /) -> Vec3:
@@ -901,7 +970,7 @@ class Vec3(Sequence[float]):
     zzzz = property(lambda self: Vec4.new(self.z, self.z, self.z, self.z))
 
 
-    # -- SWIZZLE SETTERS --
+    # -- SWIZZLE SETTERS -- 
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -1260,6 +1329,45 @@ class Vec4(Sequence[float]):
                 self.y -= other[1]
                 self.z -= other[2]
                 self.w -= other[3]
+        return NotImplemented
+
+    def __mul__(self, other: Point4 | float, /) -> Vec4:
+        match other:
+            case Vec4():
+                return Vec4.new(self.x * other.x, self.y * other.y, self.z * other.z, self.w * other.w)
+            case float() | int():
+                return Vec4.new(self.x * other, self.y * other, self.z * other, self.w * other)
+            case (float() | int(), float() | int(), float() | int(), float() | int()):
+                return Vec4.new(self.x * other[0], self.y * other[1], self.z * other[2], self.w * other[3])
+        return NotImplemented
+
+    def __rmul__(self, other: Point4 | float, /) -> Vec4:
+        match other:
+            case Vec4():
+                return Vec4.new(other.x * self.x, other.y * self.y, other.z * self.z, other.w * self.w)
+            case float() | int():
+                return Vec4.new(other * self.x, other * self.y, other * self.z, other * self.w)
+            case (float() | int(), float() | int(), float() | int(), float() | int()):
+                return Vec4.new(other[0] * self.x, other[1] * self.y, other[2] * self.z, other[3] * self.w)
+        return NotImplemented
+
+    def __imul__(self, other: Point4 | float, /) -> Vec4:
+        match other:
+            case Vec4():
+                self.x *= other.x
+                self.y *= other.y
+                self.z *= other.z
+                self.w *= other.w
+            case float() | int():
+                self.x *= other
+                self.y *= other
+                self.z *= other
+                self.w *= other
+            case (float() | int(), float() | int(), float() | int(), float() | int()):
+                self.x *= other[0]
+                self.y *= other[1]
+                self.z *= other[2]
+                self.w *= other[3]
         return NotImplemented
 
     def __truediv__(self, other: Point4 | float, /) -> Vec4:
@@ -1757,7 +1865,7 @@ class Vec4(Sequence[float]):
     wwww = property(lambda self: Vec4.new(self.w, self.w, self.w, self.w))
 
 
-    # -- SWIZZLE SETTERS --
+    # -- SWIZZLE SETTERS -- 
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
