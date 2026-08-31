@@ -11,52 +11,6 @@ from .linear import Vec2
 from .navigation import navigation
 
 
-def draw_linebox(o: tuple[float, float], a: float, d: float):
-    c = 0.5 * d * cos(a)
-    s = 0.5 * d * sin(a)
-    x1, x2 = o[0] - c, o[0] + c
-    y1, y2 = o[1] - s, o[1] + s
-
-    draw_line(x1, y1, x2, y2, (255, 0, 0), 4)
-    draw_line(o[0], o[1], o[0] - s, o[1] + c, (0, 255, 0), 2)
-
-
-def line_sphere_collision(
-    origin: tuple[float, float],
-    direction: tuple[float, float],
-    width: float,
-    center: tuple[float, float],
-    radius: float,
-) -> Literal[False] | tuple[tuple[float, float], float]:
-    # https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection 2025-08-27
-    diff = origin[0] - center[0], origin[1] - center[1]
-    length = (diff[0] ** 2 + diff[1] ** 2) ** 0.5
-    across = direction[0] * diff[0] + direction[1] * diff[1]
-    nabla = across**2 - length**2 + radius**2
-
-    if nabla < 0:  # Line never intersects circle
-        return False
-
-    sqrt_nabla = nabla**0.5
-    h_width = 0.5 * width
-    d1 = -direction[0] * diff[0] - direction[1] * diff[1] + sqrt_nabla
-    d2 = -direction[0] * diff[0] - direction[1] * diff[1] - sqrt_nabla
-
-    if (
-        h_width < abs(d1) and h_width < abs(d2) and radius < length
-    ):  # Line segment never intersects circle and is outside of it
-        return False
-
-    normal = -direction[1], direction[0]
-    # Normal is from line to sphere, but diff is sphere to line so we need to flip it
-    separation = -(normal[0] * diff[0] + normal[1] * diff[1])
-    abs_separation = abs(separation)
-    sign = separation / abs_separation
-
-    # Direction to surface of sphere and depth into sphere
-    return (normal[0] * sign, normal[1] * sign), radius - abs_separation
-
-
 class GameView(View):
     def __init__(self) -> None:
         super().__init__()
@@ -83,9 +37,7 @@ class GameView(View):
         self.alt = False
 
     def on_update(self, delta_time: float) -> bool | None:
-        prev = self.ball.center.frozen
-        self.ball.center += self.ball_velocity * delta_time
-        print(self.ball.center - prev, self.ball_velocity * delta_time)
+        self.ball.center += (self.ball_velocity * delta_time)
         if collision := collide(self.mirror_collider, self.ball):
             along = collision.normal.dot(self.ball_velocity)
 

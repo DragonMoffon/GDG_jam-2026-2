@@ -228,10 +228,13 @@ _IOP_STR = """
         match other:
             case Vec{dim}():
 {vec}
+                return self
             case float() | int():
 {sclr}
+                return self
             case ({point}):
 {tpl}
+                return self
         return NotImplemented
 """
 
