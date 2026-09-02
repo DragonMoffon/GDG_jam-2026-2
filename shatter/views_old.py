@@ -1,17 +1,29 @@
 from math import atan2, cos, degrees, pi, sin
-from typing import Literal
 
-from arcade import Sprite, View, draw_circle_filled, draw_line, key
+from arcade import Sprite, View, Rect, draw_circle_filled, draw_line, key, clock
+from arcade.camera import OrthographicProjector
 
 from resources import get_spritesheet
 
-from .collision import Circle, Line, collide
+from shatter.views.game import GameView
+from .collision import Collider, Circle, Line, Plane
 from .isometric import BillboardList, calculate_xy_intersection, create_isometric_camera
 from .linear import Vec2
 from .navigation import navigation
 
+def get_walls(rect: Rect, camera: OrthographicProjector):
+    bl = Vec2(calculate_xy_intersection(camera, camera.unproject(rect.bottom_left)))
+    tl = Vec2(calculate_xy_intersection(camera, camera.unproject(rect.top_left)))
+    tr = Vec2(calculate_xy_intersection(camera, camera.unproject(rect.top_right)))
+    br = Vec2(calculate_xy_intersection(camera, camera.unproject(rect.bottom_right)))
 
-class GameView(View):
+    yield Plane(-(bl + tl).normalised(), -0.5 * (bl+tl).length)
+    yield Plane(-(tl + tr).normalised(), -0.5 * (tl+tr).length)
+    yield Plane(-(tr + br).normalised(), -0.5 * (tr+br).length)
+    yield Plane(-(br + bl).normalised(), -0.5 * (br+bl).length)
+
+
+class GameViewOld(View):
     def __init__(self) -> None:
         super().__init__()
         self.camera = create_isometric_camera((0.0, 0.0), self.height, self.window.rect)
@@ -27,23 +39,41 @@ class GameView(View):
         self.mirror_collider = Line(Vec2(self.shadow.center_x, self.shadow.center_y), Vec2(1.0, 0.0), 64.0)
 
         self.ball = Circle(Vec2(100.0, 0.0), 40.0)
-        self.ball_velocity: Vec2 = Vec2(600.0, 0.0)
+        self.ball_velocity: Vec2 = Vec2(1000.0, 0.0)
 
         self.billboards = BillboardList()
         self.billboards.extend((self.shadow, self.mirror))
 
         self.bounds: tuple[tuple[tuple[float, float], float]]
 
+        self.colliders: tuple[Collider, ...] = (
+                self.ball,
+                self.mirror_collider,
+                *get_walls(self.window.rect, self.camera)
+        )
+
         self.alt = False
+        self.game_clock = clock.Clock(clock.GLOBAL_CLOCK.time)
+        self.hit_stop = 0.0
 
     def on_update(self, delta_time: float) -> bool | None:
-        self.ball.center += (self.ball_velocity * delta_time)
-        if collision := collide(self.mirror_collider, self.ball):
+        if self.hit_stop > 0.01:
+            self.hit_stop -= delta_time
+            self.game_clock.set_tick_speed(0.00)
+        else:
+            self.hit_stop = 0
+            self.game_clock.set_tick_speed(1.0)
+        self.game_clock.tick(delta_time)
+        self.ball.center += (self.ball_velocity * self.game_clock.delta_time)
+        collisions = get_collisions(self.ball, self.colliders)
+        for collision in collisions:
             along = collision.normal.dot(self.ball_velocity)
 
-            if along < 0:
-                self.ball.center += collision.normal * collision.depth
+            if along > 0:
+                self.ball.center -= collision.normal * collision.depth
                 self.ball_velocity -= collision.normal * (2 * along)
+                if collision.b is self.mirror_collider:
+                    self.hit_stop = 4 / 60.0
 
     def on_draw(self) -> bool | None:
         self.clear(color=(125, 125, 125))

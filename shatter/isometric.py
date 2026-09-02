@@ -7,17 +7,18 @@ from arcade.types import Point2, Point3
 
 from resources import get_shader_path
 
+# Isometric position x, y with z up on screen
+_THETA = radians(225.0)
+_PHI = radians(26.5)
+_TX, _TY = cos(_THETA), sin(_THETA)
+_PXY, _PZ = cos(_PHI), sin(_PHI)
+_UXY, _UZ = cos(_PHI - 0.5 * pi), sin(_PHI - 0.5 * pi)
 
 def create_isometric_camera(focus: Point2, distance: float, viewport: Rect):
-    theta, phi = radians(225), radians(26.5)  # Isometric position with x, y up on screen
-    tx, ty = cos(theta), sin(theta)
-    pxy, pz = cos(phi), sin(phi)
-    uxy, uz = cos(phi - 0.5 * pi), sin(phi - 0.5 * pi)
-
     view = CameraData(
-        (focus[0] + distance * tx * pxy, focus[1] + distance * ty * pxy, distance * pz),
-        (-tx * uxy, -ty * uxy, -uz),
-        (-tx * pxy, -ty * pxy, -pz),
+        (focus[0] + distance * _TX * _PXY, focus[1] + distance * _TY * _PXY, distance * _PZ),
+        (-_TX * _UXY, -_TY * _UXY, -_UZ),
+        (-_TX * _PXY, -_TY * _PXY, -_PZ),
     )
     proj = OrthographicProjectionData(
         -0.5 * viewport.width,
@@ -30,8 +31,11 @@ def create_isometric_camera(focus: Point2, distance: float, viewport: Rect):
 
     return OrthographicProjector(view=view, projection=proj, viewport=viewport)
 
+def focus_isometric(focus: Point2, distance: float, camera: CameraData):
+    camera.position = (focus[0] + distance * _TX * _PXY, focus[1] + distance * _TY * _PXY, distance * _PZ)
 
-def calculate_xy_intersection(projection: OrthographicProjector, position: Point3) -> Point2:
+
+def calculate_xy_intersection(projection: OrthographicProjector, position: Point3) -> tuple[float, float]:
     # For an orthographic projection the depth is the z-position divided by the forward vector
     depth = -position[2] / projection.view.forward[2]
     x = position[0] + depth * projection.view.forward[0]
@@ -51,10 +55,12 @@ class BillboardList(SpriteList):
     ) -> None:
         super().__init__(use_spatial_hash, spatial_hash_cell_size, atlas, capacity, lazy, visible)
 
-        self.data.program = self.ctx.load_program(
+        program = self.ctx.load_program(
             vertex_shader=":system:shaders/sprites/sprite_list_geometry_vs.glsl",
             geometry_shader=get_shader_path("sprite_list_billboard_cull_geo"),
             fragment_shader=":system:shaders/sprites/sprite_list_geometry_fs.glsl",
         )
-        self.data.program["sprite_texture"] = 0
-        self.data.program["uv_texture"] = 1
+        program["sprite_texture"] = 0
+        program["uv_texture"] = 1
+
+        self.data.program = program # type: ignore

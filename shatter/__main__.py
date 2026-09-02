@@ -1,7 +1,7 @@
 from resources import setup
 
 from .navigation import navigation
-from .views import MenuView
+from .views_old import MenuView
 from .window import Window
 
 
