@@ -35,9 +35,6 @@ class Orb:
         self.collider.center += self.velocity * dt
         self.sprite.position = self.shadow.position = self.collider.center.x, self.collider.center.y
 
-    def draw(self):
-        draw_circle_outline(self.collider.center.x, self.collider.center.y, self.collider.radius, (255, 0, 0), 3)
-
     def on_collision_enter(self, collision: Collision):
         # Our collider is always collider 'a' so we check collider 'b' for what layer we are on
         layer = collision.b.layer

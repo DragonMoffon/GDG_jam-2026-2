@@ -43,5 +43,4 @@ class GameView(View):
         with self.camera.activate():
             with self.window.ctx.enabled(self.window.ctx.DEPTH_TEST):
                 self.ground.draw(pixelated=True)
-                self.orb.draw()
                 self.billboard.draw(pixelated=True)
