@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import IntFlag, auto
+from enum import IntFlag
 from itertools import combinations
 from typing import Literal
 
 from .linear import Vec2
 
+
 def _nop(collision: Collision): ...
+
 
 @dataclass
 class Collider:
@@ -21,6 +23,7 @@ class Collider:
         self.on_collision_enter: Callable[[Collision], None] = _nop
         self.on_collision_exit: Callable[[Collision], None] = _nop
         self.on_collision: Callable[[Collision], None] = _nop
+
 
 @dataclass(slots=True)
 class Collision:
@@ -35,6 +38,7 @@ class Collision:
     def reversed(self) -> Collision:
         return Collision(self.b, self.a, -self.normal, self.depth)
 
+
 @dataclass(slots=True)
 class CollisionHistory:
     collider: Collider
@@ -45,6 +49,7 @@ class CollisionHistory:
     def update(self, collision: Collision, frame: int):
         self.collision = collision
         self.frame = frame
+
 
 @dataclass(slots=True)
 class Line(Collider):
@@ -74,10 +79,12 @@ class Plane(Collider):
     normal: Vec2
     offset: float
 
+
 @dataclass(slots=True)
 class Circle(Collider):
     center: Vec2
     radius: float
+
 
 class Polygon(Collider):
     points: tuple[Vec2, ...]
@@ -85,11 +92,13 @@ class Polygon(Collider):
 
 type CollisionFunction = Callable[..., Literal[False] | Collision]
 
+
 def plane_circle_collision(a: Plane, b: Circle) -> Literal[False] | Collision:
     depth = b.radius - (a.normal.dot(b.center) - a.offset)
-    if depth < 0: # Circle is 'infront' of plane
+    if depth < 0:  # Circle is 'infront' of plane
         return False
     return Collision(a, b, a.normal, depth)
+
 
 def circle_plane_collision(a: Circle, b: Plane) -> Literal[False] | Collision:
     if collision := plane_circle_collision(b, a):
@@ -97,6 +106,7 @@ def circle_plane_collision(a: Circle, b: Plane) -> Literal[False] | Collision:
         collision.normal = -collision.normal
         return collision
     return False
+
 
 def line_circle_collision(a: Line, b: Circle) -> Literal[False] | Collision:
     diff = a.center - a.center
@@ -124,23 +134,26 @@ def line_circle_collision(a: Line, b: Circle) -> Literal[False] | Collision:
     return Collision(a, b, sign * normal, b.radius - abs_sep)
 
 
-def circle_line_collision(a: Circle,b : Line) -> Literal[False] | Collision:
+def circle_line_collision(a: Circle, b: Line) -> Literal[False] | Collision:
     if collision := line_circle_collision(b, a):
         collision.a, collision.b = a, b
         collision.normal = -collision.normal
         return collision
     return False
 
+
 def circle_circle_collision(a: Circle, b: Circle) -> Literal[False] | Collision:
     diff = b.center - a.center
     length = diff.length_sqr
-    if (a.radius**2 + b.radius**2) < length: # Circles are too far apart
+    if (a.radius**2 + b.radius**2) < length:  # Circles are too far apart
         return False
     sep = a.radius + b.radius - length**0.5
     return Collision(a, b, diff.normalised(), sep)
 
+
 def unimplemented_collision(a: Collider, b: Collider):
     raise NotImplementedError(f"No collision function implemented for {type(a)} and {type(b)}")
+
 
 _COLLISIONS_FUNCTIONS: dict[tuple[type[Collider], type[Collider]], CollisionFunction] = {
     (Circle, Plane): circle_plane_collision,
@@ -150,13 +163,13 @@ _COLLISIONS_FUNCTIONS: dict[tuple[type[Collider], type[Collider]], CollisionFunc
     (Circle, Circle): circle_circle_collision,
 }
 
+
 def collide(a: Collider, b: Collider) -> Literal[False] | Collision:
     func = _COLLISIONS_FUNCTIONS.get((a.type, b.type), unimplemented_collision)
     return func(a, b)
 
 
 class World:
-
     def __init__(self) -> None:
         self.colliders: dict[int, Collider] = {}
         self.collisions: dict[tuple[int, int], CollisionHistory] = {}
@@ -181,10 +194,10 @@ class World:
 
     def narrow_phase_collisions(self):
         for a, b in combinations(self.colliders.values(), 2):
-            from_a = not not a.mask & b.layer
-            from_b = not not b.mask & a.layer
+            from_a = a.mask & b.layer
+            from_b = b.mask & a.layer
             if not (from_a or from_b) or not (collision := collide(a, b)):
-                continue # No collision occurred or the two object's don't care about each other
+                continue  # No collision occurred or the two object's don't care about each other
 
             if from_a:
                 key = (a.uid, b.uid)
@@ -199,7 +212,9 @@ class World:
                 if key in self.collisions:
                     self.collisions[key].update(collision.reversed(), self.frame)
                 else:
-                    self.collisions[key] = CollisionHistory(b, collision.reversed(), self.frame, self.frame)
+                    self.collisions[key] = CollisionHistory(
+                        b, collision.reversed(), self.frame, self.frame
+                    )
 
     def handle_collisions(self):
         for key, history in tuple(self.collisions.items()):
@@ -210,7 +225,8 @@ class World:
                 history.collider.on_collision_exit(history.collision)
                 self.collisions.pop(key)
 
-class CollisionLayers:
+
+class CollisionLayers(IntFlag):
     NONE = 0b0000_0000
     GEOMETRY = 0b0000_0001
     PLAYER = 0b0000_0010
