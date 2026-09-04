@@ -9,7 +9,8 @@ from shatter.views.game import GameView
 from .collision import Collider, Circle, Line, Plane
 from .isometric import BillboardList, calculate_xy_intersection, create_isometric_camera
 from .linear import Vec2
-from .navigation import navigation
+from .context import navigation
+
 
 def get_walls(rect: Rect, camera: OrthographicProjector):
     bl = Vec2(calculate_xy_intersection(camera, camera.unproject(rect.bottom_left)))
@@ -17,10 +18,10 @@ def get_walls(rect: Rect, camera: OrthographicProjector):
     tr = Vec2(calculate_xy_intersection(camera, camera.unproject(rect.top_right)))
     br = Vec2(calculate_xy_intersection(camera, camera.unproject(rect.bottom_right)))
 
-    yield Plane(-(bl + tl).normalised(), -0.5 * (bl+tl).length)
-    yield Plane(-(tl + tr).normalised(), -0.5 * (tl+tr).length)
-    yield Plane(-(tr + br).normalised(), -0.5 * (tr+br).length)
-    yield Plane(-(br + bl).normalised(), -0.5 * (br+bl).length)
+    yield Plane(-(bl + tl).normalised(), -0.5 * (bl + tl).length)
+    yield Plane(-(tl + tr).normalised(), -0.5 * (tl + tr).length)
+    yield Plane(-(tr + br).normalised(), -0.5 * (tr + br).length)
+    yield Plane(-(br + bl).normalised(), -0.5 * (br + bl).length)
 
 
 class GameViewOld(View):
@@ -36,7 +37,9 @@ class GameViewOld(View):
         self.mirror = Sprite(self.mirror_body[0], center_y=48)
         self.shadow = Sprite(self.mirror_shadow[0])
         self.mirror.depth = 48
-        self.mirror_collider = Line(Vec2(self.shadow.center_x, self.shadow.center_y), Vec2(1.0, 0.0), 64.0)
+        self.mirror_collider = Line(
+            Vec2(self.shadow.center_x, self.shadow.center_y), Vec2(1.0, 0.0), 64.0
+        )
 
         self.ball = Circle(Vec2(100.0, 0.0), 40.0)
         self.ball_velocity: Vec2 = Vec2(1000.0, 0.0)
@@ -47,9 +50,9 @@ class GameViewOld(View):
         self.bounds: tuple[tuple[tuple[float, float], float]]
 
         self.colliders: tuple[Collider, ...] = (
-                self.ball,
-                self.mirror_collider,
-                *get_walls(self.window.rect, self.camera)
+            self.ball,
+            self.mirror_collider,
+            *get_walls(self.window.rect, self.camera),
         )
 
         self.alt = False
@@ -64,7 +67,7 @@ class GameViewOld(View):
             self.hit_stop = 0
             self.game_clock.set_tick_speed(1.0)
         self.game_clock.tick(delta_time)
-        self.ball.center += (self.ball_velocity * self.game_clock.delta_time)
+        self.ball.center += self.ball_velocity * self.game_clock.delta_time
         collisions = get_collisions(self.ball, self.colliders)
         for collision in collisions:
             along = collision.normal.dot(self.ball_velocity)
@@ -96,7 +99,9 @@ class GameViewOld(View):
             return
 
         shadow_angle = atan2(ty, tx)
-        self.mirror_collider.tangent.update(cos(shadow_angle - 0.5*pi), sin(shadow_angle - 0.5*pi))
+        self.mirror_collider.tangent.update(
+            cos(shadow_angle - 0.5 * pi), sin(shadow_angle - 0.5 * pi)
+        )
         angle = degrees(shadow_angle) + 45
         frame = round(angle * 8 / 180)
 

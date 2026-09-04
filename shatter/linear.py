@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import Self, Literal, overload
+from typing import Literal, overload
 
 type Point2 = Vec2 | tuple[float, float]
+
+
 class Vec2(Sequence[float]):
-    __slots__ = ('x', 'y')
+    __slots__ = ("x", "y")
+
     @overload
     def __init__(self, x: float, y: float): ...
     @overload
@@ -21,7 +24,7 @@ class Vec2(Sequence[float]):
             elif isinstance(y, float) or isinstance(y, int):
                 self.y = y
                 return
-        elif isinstance(x, Vec2) or (isinstance(x, tuple) and len(x)==2):
+        elif isinstance(x, Vec2) or (isinstance(x, tuple) and len(x) == 2):
             self.x, self.y = x
             return
         raise ValueError(f"Invalid input arguments for Vec2({x}, {y})")
@@ -46,15 +49,17 @@ class Vec2(Sequence[float]):
     @property
     def length_sqr(self) -> float:
         return self.x**2 + self.y**2
+
     norm_sqr = length_sqr
 
     @property
     def length(self) -> float:
-        return (self.x**2 + self.y**2)**0.5
+        return (self.x**2 + self.y**2) ** 0.5
+
     norm = length
 
     def __abs__(self) -> float:
-        return (self.x**2 + self.y**2)**0.5
+        return (self.x**2 + self.y**2) ** 0.5
 
     # -- VECTOR OPERATORS --
 
@@ -62,11 +67,13 @@ class Vec2(Sequence[float]):
         l = abs(self)
         self.x = self.x / l
         self.y = self.y / l
+
     normalize = normalise
 
     def normalised(self) -> Vec2:
         l = abs(self)
         return Vec2.new(self.x / l, self.y / l)
+
     normalized = normalised
 
     def dot(self, other: Point2, /) -> float:
@@ -81,7 +88,7 @@ class Vec2(Sequence[float]):
         return NotImplemented
 
     def __rmatmul__(self, other: Point2, /) -> float:
-        match other: # Multiplication with Matrix is not commutative even though it is with vectors
+        match other:  # Multiplication with Matrix is not commutative even though it is with vectors
             case Vec2():
                 return self.dot(other)
             case (float() | int(), float() | int()):
@@ -96,7 +103,6 @@ class Vec2(Sequence[float]):
 
     def rcross(self, other: Point2, /) -> float:
         return -other[1] * self.x + other[0] * self.y
-
 
     # -- HASH METHODS --
 
@@ -372,9 +378,9 @@ class Vec2(Sequence[float]):
     def __pow__(self, other: Point2 | float, /) -> Vec2:
         match other:
             case Vec2():
-                return Vec2.new(self.x ** other.x, self.y ** other.y)
+                return Vec2.new(self.x**other.x, self.y**other.y)
             case float() | int():
-                return Vec2.new(self.x ** other, self.y ** other)
+                return Vec2.new(self.x**other, self.y**other)
             case (float() | int(), float() | int()):
                 return Vec2.new(self.x ** other[0], self.y ** other[1])
         return NotImplemented
@@ -382,9 +388,9 @@ class Vec2(Sequence[float]):
     def __rpow__(self, other: Point2 | float, /) -> Vec2:
         match other:
             case Vec2():
-                return Vec2.new(other.x ** self.x, other.y ** self.y)
+                return Vec2.new(other.x**self.x, other.y**self.y)
             case float() | int():
-                return Vec2.new(other ** self.x, other ** self.y)
+                return Vec2.new(other**self.x, other**self.y)
             case (float() | int(), float() | int()):
                 return Vec2.new(other[0] ** self.x, other[1] ** self.y)
         return NotImplemented
@@ -435,8 +441,7 @@ class Vec2(Sequence[float]):
     yyyx = property(lambda self: Vec4.new(self.y, self.y, self.y, self.x))
     yyyy = property(lambda self: Vec4.new(self.y, self.y, self.y, self.y))
 
-
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -454,8 +459,11 @@ class Vec2(Sequence[float]):
 
 
 type Point3 = Vec3 | tuple[float, float, float]
+
+
 class Vec3(Sequence[float]):
-    __slots__ = ('x', 'y', 'z')
+    __slots__ = ("x", "y", "z")
+
     @overload
     def __init__(self, x: float, y: float, z: float): ...
     @overload
@@ -465,7 +473,12 @@ class Vec3(Sequence[float]):
     @overload
     def __init__(self, x: Point3): ...
 
-    def __init__(self, x: float | Point2 | Point3 = 0.0, y: float | Point2 | None = None, z: float | None = None) -> None:
+    def __init__(
+        self,
+        x: float | Point2 | Point3 = 0.0,
+        y: float | Point2 | None = None,
+        z: float | None = None,
+    ) -> None:
         if isinstance(x, float) or isinstance(x, int):
             self.x = x
             if y is None and z is None:
@@ -476,15 +489,15 @@ class Vec3(Sequence[float]):
                 if isinstance(z, float) or isinstance(z, int):
                     self.z = z
                     return
-            elif isinstance(y, Vec2) or (isinstance(y, tuple) and len(y)==2):
+            elif isinstance(y, Vec2) or (isinstance(y, tuple) and len(y) == 2):
                 self.y, self.z = y
                 return
-        elif isinstance(x, Vec2) or (isinstance(x, tuple) and len(x)==2):
+        elif isinstance(x, Vec2) or (isinstance(x, tuple) and len(x) == 2):
             self.x, self.y = x
             if isinstance(z, float) or isinstance(z, int):
                 self.z = z
                 return
-        elif isinstance(x, Vec3) or (isinstance(x, tuple) and len(x)==3):
+        elif isinstance(x, Vec3) or (isinstance(x, tuple) and len(x) == 3):
             self.x, self.y, self.z = x
             return
         raise ValueError(f"Invalid input arguments for Vec3({x}, {y}, {z})")
@@ -511,15 +524,17 @@ class Vec3(Sequence[float]):
     @property
     def length_sqr(self) -> float:
         return self.x**2 + self.y**2 + self.z**2
+
     norm_sqr = length_sqr
 
     @property
     def length(self) -> float:
-        return (self.x**2 + self.y**2 + self.z**2)**0.5
+        return (self.x**2 + self.y**2 + self.z**2) ** 0.5
+
     norm = length
 
     def __abs__(self) -> float:
-        return (self.x**2 + self.y**2 + self.z**2)**0.5
+        return (self.x**2 + self.y**2 + self.z**2) ** 0.5
 
     # -- VECTOR OPERATORS --
 
@@ -528,11 +543,13 @@ class Vec3(Sequence[float]):
         self.x = self.x / l
         self.y = self.y / l
         self.z = self.z / l
+
     normalize = normalise
 
     def normalised(self) -> Vec3:
         l = abs(self)
         return Vec3.new(self.x / l, self.y / l, self.z / l)
+
     normalized = normalised
 
     def dot(self, other: Point3, /) -> float:
@@ -547,7 +564,7 @@ class Vec3(Sequence[float]):
         return NotImplemented
 
     def __rmatmul__(self, other: Point3, /) -> float:
-        match other: # Multiplication with Matrix is not commutative even though it is with vectors
+        match other:  # Multiplication with Matrix is not commutative even though it is with vectors
             case Vec3():
                 return self.dot(other)
             case (float() | int(), float() | int(), float() | int()):
@@ -566,7 +583,6 @@ class Vec3(Sequence[float]):
         a1, a2, a3 = other
         b1, b2, b3 = self
         return Vec3.new(a2 * b3 - a3 * b2, a3 * b1 - a1 * b3, a1 * b2 - a2 * b1)
-
 
     # -- HASH METHODS --
 
@@ -863,9 +879,9 @@ class Vec3(Sequence[float]):
     def __pow__(self, other: Point3 | float, /) -> Vec3:
         match other:
             case Vec3():
-                return Vec3.new(self.x ** other.x, self.y ** other.y, self.z ** other.z)
+                return Vec3.new(self.x**other.x, self.y**other.y, self.z**other.z)
             case float() | int():
-                return Vec3.new(self.x ** other, self.y ** other, self.z ** other)
+                return Vec3.new(self.x**other, self.y**other, self.z**other)
             case (float() | int(), float() | int(), float() | int()):
                 return Vec3.new(self.x ** other[0], self.y ** other[1], self.z ** other[2])
         return NotImplemented
@@ -873,9 +889,9 @@ class Vec3(Sequence[float]):
     def __rpow__(self, other: Point3 | float, /) -> Vec3:
         match other:
             case Vec3():
-                return Vec3.new(other.x ** self.x, other.y ** self.y, other.z ** self.z)
+                return Vec3.new(other.x**self.x, other.y**self.y, other.z**self.z)
             case float() | int():
-                return Vec3.new(other ** self.x, other ** self.y, other ** self.z)
+                return Vec3.new(other**self.x, other**self.y, other**self.z)
             case (float() | int(), float() | int(), float() | int()):
                 return Vec3.new(other[0] ** self.x, other[1] ** self.y, other[2] ** self.z)
         return NotImplemented
@@ -1018,8 +1034,7 @@ class Vec3(Sequence[float]):
     zzzy = property(lambda self: Vec4.new(self.z, self.z, self.z, self.y))
     zzzz = property(lambda self: Vec4.new(self.z, self.z, self.z, self.z))
 
-
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -1107,8 +1122,11 @@ class Vec3(Sequence[float]):
 
 
 type Point4 = Vec4 | tuple[float, float, float, float]
+
+
 class Vec4(Sequence[float]):
-    __slots__ = ('x', 'y', 'z', 'w')
+    __slots__ = ("x", "y", "z", "w")
+
     @overload
     def __init__(self, x: float, y: float, z: float, w: float): ...
     @overload
@@ -1126,7 +1144,13 @@ class Vec4(Sequence[float]):
     @overload
     def __init__(self, x: Point4): ...
 
-    def __init__(self, x: float | Point2 | Point3 | Point4 = 0.0, y: float | Point2 | Point3 | None = None, z: float | Point2 | None = None, w: float | None = None) -> None:
+    def __init__(
+        self,
+        x: float | Point2 | Point3 | Point4 = 0.0,
+        y: float | Point2 | Point3 | None = None,
+        z: float | Point2 | None = None,
+        w: float | None = None,
+    ) -> None:
         if isinstance(x, float) or isinstance(x, int):
             self.x = x
             if y is None and z is None and w is None:
@@ -1139,33 +1163,33 @@ class Vec4(Sequence[float]):
                     if isinstance(w, float) or isinstance(w, int):
                         self.w = w
                         return
-                elif isinstance(z, Vec2) or (isinstance(z, tuple) and len(z)==2):
+                elif isinstance(z, Vec2) or (isinstance(z, tuple) and len(z) == 2):
                     self.z, self.w = z
                     return
-            elif isinstance(y, Vec2) or (isinstance(y, tuple) and len(y)==2):
+            elif isinstance(y, Vec2) or (isinstance(y, tuple) and len(y) == 2):
                 self.y, self.z = y
                 if isinstance(w, float) or isinstance(w, int):
                     self.w = w
                     return
-            elif isinstance(y, Vec3) or (isinstance(y, tuple) and len(y)==3):
+            elif isinstance(y, Vec3) or (isinstance(y, tuple) and len(y) == 3):
                 self.y, self.z, self.w = y
                 return
-        elif isinstance(x, Vec2) or (isinstance(x, tuple) and len(x)==2):
+        elif isinstance(x, Vec2) or (isinstance(x, tuple) and len(x) == 2):
             self.x, self.y = x
             if isinstance(z, float) or isinstance(z, int):
                 self.z = z
                 if isinstance(w, float) or isinstance(w, int):
                     self.w = w
                     return
-            elif isinstance(z, Vec2) or (isinstance(z, tuple) and len(z)==2):
+            elif isinstance(z, Vec2) or (isinstance(z, tuple) and len(z) == 2):
                 self.z, self.w = z
                 return
-        elif isinstance(x, Vec3) or (isinstance(x, tuple) and len(x)==3):
+        elif isinstance(x, Vec3) or (isinstance(x, tuple) and len(x) == 3):
             self.x, self.y, self.z = x
             if isinstance(w, float) or isinstance(w, int):
                 self.w = w
                 return
-        elif isinstance(x, Vec4) or (isinstance(x, tuple) and len(x)==4):
+        elif isinstance(x, Vec4) or (isinstance(x, tuple) and len(x) == 4):
             self.x, self.y, self.z, self.w = x
             return
         raise ValueError(f"Invalid input arguments for Vec4({x}, {y}, {z}, {w})")
@@ -1194,15 +1218,17 @@ class Vec4(Sequence[float]):
     @property
     def length_sqr(self) -> float:
         return self.x**2 + self.y**2 + self.z**2 + self.w**2
+
     norm_sqr = length_sqr
 
     @property
     def length(self) -> float:
-        return (self.x**2 + self.y**2 + self.z**2 + self.w**2)**0.5
+        return (self.x**2 + self.y**2 + self.z**2 + self.w**2) ** 0.5
+
     norm = length
 
     def __abs__(self) -> float:
-        return (self.x**2 + self.y**2 + self.z**2 + self.w**2)**0.5
+        return (self.x**2 + self.y**2 + self.z**2 + self.w**2) ** 0.5
 
     # -- VECTOR OPERATORS --
 
@@ -1212,11 +1238,13 @@ class Vec4(Sequence[float]):
         self.y = self.y / l
         self.z = self.z / l
         self.w = self.w / l
+
     normalize = normalise
 
     def normalised(self) -> Vec4:
         l = abs(self)
         return Vec4.new(self.x / l, self.y / l, self.z / l, self.w / l)
+
     normalized = normalised
 
     def dot(self, other: Point4, /) -> float:
@@ -1231,7 +1259,7 @@ class Vec4(Sequence[float]):
         return NotImplemented
 
     def __rmatmul__(self, other: Point4, /) -> float:
-        match other: # Multiplication with Matrix is not commutative even though it is with vectors
+        match other:  # Multiplication with Matrix is not commutative even though it is with vectors
             case Vec4():
                 return self.dot(other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
@@ -1242,9 +1270,10 @@ class Vec4(Sequence[float]):
         return NotImplemented
 
     def cross(self, other: Point4, /) -> Vec4:
-        raise NotImplementedError('Vec4 does not implement cross product')
+        raise NotImplementedError("Vec4 does not implement cross product")
+
     def rcross(self, other: Point4, /) -> Vec4:
-        raise NotImplementedError('Vec4 does not implement cross product')
+        raise NotImplementedError("Vec4 does not implement cross product")
 
     # -- HASH METHODS --
 
@@ -1310,21 +1339,29 @@ class Vec4(Sequence[float]):
     def __add__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(self.x + other.x, self.y + other.y, self.z + other.z, self.w + other.w)
+                return Vec4.new(
+                    self.x + other.x, self.y + other.y, self.z + other.z, self.w + other.w
+                )
             case float() | int():
                 return Vec4.new(self.x + other, self.y + other, self.z + other, self.w + other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(self.x + other[0], self.y + other[1], self.z + other[2], self.w + other[3])
+                return Vec4.new(
+                    self.x + other[0], self.y + other[1], self.z + other[2], self.w + other[3]
+                )
         return NotImplemented
 
     def __radd__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(other.x + self.x, other.y + self.y, other.z + self.z, other.w + self.w)
+                return Vec4.new(
+                    other.x + self.x, other.y + self.y, other.z + self.z, other.w + self.w
+                )
             case float() | int():
                 return Vec4.new(other + self.x, other + self.y, other + self.z, other + self.w)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(other[0] + self.x, other[1] + self.y, other[2] + self.z, other[3] + self.w)
+                return Vec4.new(
+                    other[0] + self.x, other[1] + self.y, other[2] + self.z, other[3] + self.w
+                )
         return NotImplemented
 
     def __iadd__(self, other: Point4 | float, /) -> Vec4:
@@ -1352,21 +1389,29 @@ class Vec4(Sequence[float]):
     def __sub__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(self.x - other.x, self.y - other.y, self.z - other.z, self.w - other.w)
+                return Vec4.new(
+                    self.x - other.x, self.y - other.y, self.z - other.z, self.w - other.w
+                )
             case float() | int():
                 return Vec4.new(self.x - other, self.y - other, self.z - other, self.w - other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(self.x - other[0], self.y - other[1], self.z - other[2], self.w - other[3])
+                return Vec4.new(
+                    self.x - other[0], self.y - other[1], self.z - other[2], self.w - other[3]
+                )
         return NotImplemented
 
     def __rsub__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(other.x - self.x, other.y - self.y, other.z - self.z, other.w - self.w)
+                return Vec4.new(
+                    other.x - self.x, other.y - self.y, other.z - self.z, other.w - self.w
+                )
             case float() | int():
                 return Vec4.new(other - self.x, other - self.y, other - self.z, other - self.w)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(other[0] - self.x, other[1] - self.y, other[2] - self.z, other[3] - self.w)
+                return Vec4.new(
+                    other[0] - self.x, other[1] - self.y, other[2] - self.z, other[3] - self.w
+                )
         return NotImplemented
 
     def __isub__(self, other: Point4 | float, /) -> Vec4:
@@ -1394,21 +1439,29 @@ class Vec4(Sequence[float]):
     def __mul__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(self.x * other.x, self.y * other.y, self.z * other.z, self.w * other.w)
+                return Vec4.new(
+                    self.x * other.x, self.y * other.y, self.z * other.z, self.w * other.w
+                )
             case float() | int():
                 return Vec4.new(self.x * other, self.y * other, self.z * other, self.w * other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(self.x * other[0], self.y * other[1], self.z * other[2], self.w * other[3])
+                return Vec4.new(
+                    self.x * other[0], self.y * other[1], self.z * other[2], self.w * other[3]
+                )
         return NotImplemented
 
     def __rmul__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(other.x * self.x, other.y * self.y, other.z * self.z, other.w * self.w)
+                return Vec4.new(
+                    other.x * self.x, other.y * self.y, other.z * self.z, other.w * self.w
+                )
             case float() | int():
                 return Vec4.new(other * self.x, other * self.y, other * self.z, other * self.w)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(other[0] * self.x, other[1] * self.y, other[2] * self.z, other[3] * self.w)
+                return Vec4.new(
+                    other[0] * self.x, other[1] * self.y, other[2] * self.z, other[3] * self.w
+                )
         return NotImplemented
 
     def __imul__(self, other: Point4 | float, /) -> Vec4:
@@ -1436,21 +1489,29 @@ class Vec4(Sequence[float]):
     def __truediv__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(self.x / other.x, self.y / other.y, self.z / other.z, self.w / other.w)
+                return Vec4.new(
+                    self.x / other.x, self.y / other.y, self.z / other.z, self.w / other.w
+                )
             case float() | int():
                 return Vec4.new(self.x / other, self.y / other, self.z / other, self.w / other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(self.x / other[0], self.y / other[1], self.z / other[2], self.w / other[3])
+                return Vec4.new(
+                    self.x / other[0], self.y / other[1], self.z / other[2], self.w / other[3]
+                )
         return NotImplemented
 
     def __rtruediv__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(other.x / self.x, other.y / self.y, other.z / self.z, other.w / self.w)
+                return Vec4.new(
+                    other.x / self.x, other.y / self.y, other.z / self.z, other.w / self.w
+                )
             case float() | int():
                 return Vec4.new(other / self.x, other / self.y, other / self.z, other / self.w)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(other[0] / self.x, other[1] / self.y, other[2] / self.z, other[3] / self.w)
+                return Vec4.new(
+                    other[0] / self.x, other[1] / self.y, other[2] / self.z, other[3] / self.w
+                )
         return NotImplemented
 
     def __itruediv__(self, other: Point4 | float, /) -> Vec4:
@@ -1478,21 +1539,29 @@ class Vec4(Sequence[float]):
     def __mod__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(self.x % other.x, self.y % other.y, self.z % other.z, self.w % other.w)
+                return Vec4.new(
+                    self.x % other.x, self.y % other.y, self.z % other.z, self.w % other.w
+                )
             case float() | int():
                 return Vec4.new(self.x % other, self.y % other, self.z % other, self.w % other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(self.x % other[0], self.y % other[1], self.z % other[2], self.w % other[3])
+                return Vec4.new(
+                    self.x % other[0], self.y % other[1], self.z % other[2], self.w % other[3]
+                )
         return NotImplemented
 
     def __rmod__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(other.x % self.x, other.y % self.y, other.z % self.z, other.w % self.w)
+                return Vec4.new(
+                    other.x % self.x, other.y % self.y, other.z % self.z, other.w % self.w
+                )
             case float() | int():
                 return Vec4.new(other % self.x, other % self.y, other % self.z, other % self.w)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(other[0] % self.x, other[1] % self.y, other[2] % self.z, other[3] % self.w)
+                return Vec4.new(
+                    other[0] % self.x, other[1] % self.y, other[2] % self.z, other[3] % self.w
+                )
         return NotImplemented
 
     def __imod__(self, other: Point4 | float, /) -> Vec4:
@@ -1520,21 +1589,29 @@ class Vec4(Sequence[float]):
     def __floordiv__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(self.x // other.x, self.y // other.y, self.z // other.z, self.w // other.w)
+                return Vec4.new(
+                    self.x // other.x, self.y // other.y, self.z // other.z, self.w // other.w
+                )
             case float() | int():
                 return Vec4.new(self.x // other, self.y // other, self.z // other, self.w // other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(self.x // other[0], self.y // other[1], self.z // other[2], self.w // other[3])
+                return Vec4.new(
+                    self.x // other[0], self.y // other[1], self.z // other[2], self.w // other[3]
+                )
         return NotImplemented
 
     def __rfloordiv__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(other.x // self.x, other.y // self.y, other.z // self.z, other.w // self.w)
+                return Vec4.new(
+                    other.x // self.x, other.y // self.y, other.z // self.z, other.w // self.w
+                )
             case float() | int():
                 return Vec4.new(other // self.x, other // self.y, other // self.z, other // self.w)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(other[0] // self.x, other[1] // self.y, other[2] // self.z, other[3] // self.w)
+                return Vec4.new(
+                    other[0] // self.x, other[1] // self.y, other[2] // self.z, other[3] // self.w
+                )
         return NotImplemented
 
     def __ifloordiv__(self, other: Point4 | float, /) -> Vec4:
@@ -1562,21 +1639,25 @@ class Vec4(Sequence[float]):
     def __pow__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(self.x ** other.x, self.y ** other.y, self.z ** other.z, self.w ** other.w)
+                return Vec4.new(self.x**other.x, self.y**other.y, self.z**other.z, self.w**other.w)
             case float() | int():
-                return Vec4.new(self.x ** other, self.y ** other, self.z ** other, self.w ** other)
+                return Vec4.new(self.x**other, self.y**other, self.z**other, self.w**other)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(self.x ** other[0], self.y ** other[1], self.z ** other[2], self.w ** other[3])
+                return Vec4.new(
+                    self.x ** other[0], self.y ** other[1], self.z ** other[2], self.w ** other[3]
+                )
         return NotImplemented
 
     def __rpow__(self, other: Point4 | float, /) -> Vec4:
         match other:
             case Vec4():
-                return Vec4.new(other.x ** self.x, other.y ** self.y, other.z ** self.z, other.w ** self.w)
+                return Vec4.new(other.x**self.x, other.y**self.y, other.z**self.z, other.w**self.w)
             case float() | int():
-                return Vec4.new(other ** self.x, other ** self.y, other ** self.z, other ** self.w)
+                return Vec4.new(other**self.x, other**self.y, other**self.z, other**self.w)
             case (float() | int(), float() | int(), float() | int(), float() | int()):
-                return Vec4.new(other[0] ** self.x, other[1] ** self.y, other[2] ** self.z, other[3] ** self.w)
+                return Vec4.new(
+                    other[0] ** self.x, other[1] ** self.y, other[2] ** self.z, other[3] ** self.w
+                )
         return NotImplemented
 
     def __ipow__(self, other: Point4 | float, /) -> Vec4:
@@ -1939,8 +2020,7 @@ class Vec4(Sequence[float]):
     wwwz = property(lambda self: Vec4.new(self.w, self.w, self.w, self.z))
     wwww = property(lambda self: Vec4.new(self.w, self.w, self.w, self.w))
 
-
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:

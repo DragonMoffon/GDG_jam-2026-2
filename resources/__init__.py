@@ -19,7 +19,7 @@ shaders: dict[str, Path] = {
 }
 
 
-def setup():
+def setup_resources():
     for font in fonts:
         load_font(font)
 

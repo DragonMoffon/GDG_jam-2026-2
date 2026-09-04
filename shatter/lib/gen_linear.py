@@ -1,7 +1,8 @@
 from pathlib import Path
 from itertools import product, permutations
 from sys import argv
-from typing import Iterable, Literal
+from typing import Literal
+from collections.abc import Iterable
 
 # Components of a Vector obj
 
@@ -37,13 +38,13 @@ from typing import Iterable, Literal
 # * swizzle setters
 
 axis = "xyzw"
-type Dim = Literal[2] | Literal[3] | Literal[4]
+type Dim = Literal[2, 3, 4]
 
 _HEADER_STR = """# ! DO NOT EDIT DIRECTLY. THIS IS AN AUTO GENERATED FILE !
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import Self, Literal, overload
+from typing import Literal, overload
 
 """
 
@@ -53,9 +54,15 @@ class Vec{dim}(Sequence[float]):
 """
 _INIT_NONE_STR = "{depth}if {none}:\n{depth}    {eq} = {a}\n{depth}    return\n"
 _INIT_SCLR_STR = "{depth}{el}if isinstance({a}, float) or isinstance({a}, int):\n"
-_INIT_POINT_STR = "{depth}{el}if isinstance({a}, Vec{dim}) or (isinstance({a}, tuple) and len({a})=={dim}):\n"
+_INIT_POINT_STR = (
+    "{depth}{el}if isinstance({a}, Vec{dim}) or (isinstance({a}, tuple) and len({a})=={dim}):\n"
+)
+
+
 def _tabs(depth: int) -> str:
-    return f"    {"    "*depth}"
+    return f"    {'    ' * depth}"
+
+
 _INIT_STR = """
     def __init__(self, {args}) -> None:
 {init}
@@ -249,61 +256,67 @@ _SWIZ_SET_STR = """
             {tpl}
 """
 
+
 def generate_cls(dim: Dim):
     chrs = axis[:dim]
     return _CLS_STR.format(dim=dim, tpl=", ".join("float" for _ in chrs), chrs=tuple(chrs))
 
+
 def get_init_combinations(dim: Dim):
     chrs = axis[:dim]
+
     def _chop(rngs: Iterable[int]):
         f = 0
         for e in rngs:
             yield chrs[f:e]
             f = e
         yield chrs[f:]
-    splts = product(range(2), repeat=dim-1) # All 'cut' locations to get a unique combination
-    rngs = ((i for i, x in enumerate(e, 1) if x == 0) for e in splts) # Ranges for each unique combination
+
+    splts = product(range(2), repeat=dim - 1)  # All 'cut' locations to get a unique combination
+    rngs = (
+        (i for i, x in enumerate(e, 1) if x == 0) for e in splts
+    )  # Ranges for each unique combination
     return (_chop(rng) for rng in rngs)
+
 
 def generate_init_overload(combination: Iterable[str]):
     yield f"    @overload\n"
     types = ("float" if len(v) == 1 else f"Point{len(v)}" for v in combination)
-    yield f"    def __init__(self, {", ".join(f"{axis[i]}: {t}" for i, t in enumerate(types))}): ...\n"
+    yield f"    def __init__(self, {', '.join(f'{axis[i]}: {t}' for i, t in enumerate(types))}): ...\n"
+
 
 def get_init_args(dim: Dim):
-    yield f"{axis[0]}: {" | ".join(("float", *(f"Point{sz}" for sz in range(2, dim+1))))} = 0.0"
-    for i in range(dim-1, 0, -1):
-        yield f"{axis[dim-i]}: {" | ".join(("float", *(f"Point{sz}" for sz in range(2, i+1)), "None"))} = None"
+    yield f"{axis[0]}: {' | '.join(('float', *(f'Point{sz}' for sz in range(2, dim + 1))))} = 0.0"
+    for i in range(dim - 1, 0, -1):
+        yield f"{axis[dim - i]}: {' | '.join(('float', *(f'Point{sz}' for sz in range(2, i + 1)), 'None'))} = None"
+
 
 def generate_init_branch(val: str, branch: dict[str | None, dict], depth: int, el: bool = False):
-    if len(val) == 1: # Scalar Case
-        yield _INIT_SCLR_STR.format(
-            depth=_tabs(depth),
-            el="el" if el else "",
-            a=val
-        )
-        yield f"{_tabs(depth+1)}self.{val} = {val}\n"
-    elif len(val) > 1: # Vector Case
+    if len(val) == 1:  # Scalar Case
+        yield _INIT_SCLR_STR.format(depth=_tabs(depth), el="el" if el else "", a=val)
+        yield f"{_tabs(depth + 1)}self.{val} = {val}\n"
+    elif len(val) > 1:  # Vector Case
         yield _INIT_POINT_STR.format(
             depth=_tabs(depth),
             el="el" if el else "",
             dim=len(val),
             a=val[0],
         )
-        yield f"{_tabs(depth+1)}{", ".join(f"self.{a}" for a in val)} = {val[0]}\n"
+        yield f"{_tabs(depth + 1)}{', '.join(f'self.{a}' for a in val)} = {val[0]}\n"
     if not branch:
-        yield f"{_tabs(depth+1)}return\n"
+        yield f"{_tabs(depth + 1)}return\n"
 
     for idx, (key, sub) in enumerate(branch.items()):
         if key is None:
             yield _INIT_NONE_STR.format(
-                depth=_tabs(depth+1),
+                depth=_tabs(depth + 1),
                 none=" and ".join(f"{a} is None" for a in axis[1:sub]),
                 eq=" = ".join(f"self.{a}" for a in axis[1:sub]),
-                a=val
+                a=val,
             )
         else:
-            yield from generate_init_branch(key, sub, depth+1, idx > 0)
+            yield from generate_init_branch(key, sub, depth + 1, idx > 0)
+
 
 def get_init_branches(dim: Dim, combinations: Iterable[Iterable[str]]):
     tree: dict = {axis[0]: {None: dim}}
@@ -314,7 +327,8 @@ def get_init_branches(dim: Dim, combinations: Iterable[Iterable[str]]):
                 branch[arg] = {}
             branch = branch[arg]
     yield from generate_init_branch("", tree, 0)
-    yield f"{_tabs(1)}raise ValueError(f\"Invalid input arguments for Vec{dim}({", ".join(f"{{{a}}}" for a in axis[:dim])})\")"
+    yield f'{_tabs(1)}raise ValueError(f"Invalid input arguments for Vec{dim}({", ".join(f"{{{a}}}" for a in axis[:dim])})")'
+
 
 def generate_init(dim: Dim):
     combinations = get_init_combinations(dim)
@@ -322,26 +336,45 @@ def generate_init(dim: Dim):
         yield from generate_init_overload(combination)
 
     chrs = axis[:dim]
-    yield _INIT_STR.format(dim=dim, args=", ".join(get_init_args(dim)), init="".join(get_init_branches(dim, get_init_combinations(dim))))
-    yield _NEW_STR.format(dim=dim, args=", ".join(f"{c}: float = 0.0" for c in chrs), vec="\n".join(f"        vec.{char} = {char}" for char in chrs), self="\n".join(f"        self.{char} = {char}" for char in chrs))
-    yield _FROZ_STR.format(tpl=", ".join("float" for _ in chrs), rtrn=", ".join(f"self.{char}" for char in chrs))
+    yield _INIT_STR.format(
+        dim=dim,
+        args=", ".join(get_init_args(dim)),
+        init="".join(get_init_branches(dim, get_init_combinations(dim))),
+    )
+    yield _NEW_STR.format(
+        dim=dim,
+        args=", ".join(f"{c}: float = 0.0" for c in chrs),
+        vec="\n".join(f"        vec.{char} = {char}" for char in chrs),
+        self="\n".join(f"        self.{char} = {char}" for char in chrs),
+    )
+    yield _FROZ_STR.format(
+        tpl=", ".join("float" for _ in chrs), rtrn=", ".join(f"self.{char}" for char in chrs)
+    )
+
 
 def generate_length(dim: Dim):
     yield _LEN_STR.format(len=" + ".join(f"self.{a}**2" for a in axis[:dim]))
 
-def generate_vec_ops(dim: Dim): # TODO: breakdown into sub functions esp for cross product and matmul
+
+def generate_vec_ops(
+    dim: Dim,
+):  # TODO: breakdown into sub functions esp for cross product and matmul
     chrs = axis[:dim]
     normalise = "\n".join(_NRM_STR.format(a=a) for a in chrs)
     normalised = ", ".join(_NRMD_STR.format(a=a) for a in chrs)
     match dim:
         case 2:
             cross_rtrn = "float"
-            cross = _Vec2_CROSS_STR.format(a1 = f"self.{chrs[0]}", a2=f"self.{chrs[1]}", b1="other[0]", b2="other[1]")
-            rcross = _Vec2_CROSS_STR.format(b1 = f"self.{chrs[0]}", b2=f"self.{chrs[1]}", a1="other[0]", a2="other[1]")
+            cross = _Vec2_CROSS_STR.format(
+                a1=f"self.{chrs[0]}", a2=f"self.{chrs[1]}", b1="other[0]", b2="other[1]"
+            )
+            rcross = _Vec2_CROSS_STR.format(
+                b1=f"self.{chrs[0]}", b2=f"self.{chrs[1]}", a1="other[0]", a2="other[1]"
+            )
         case 3:
             cross_rtrn = "Vec3"
-            cross = _Vec3_CROSS_STR.format(first = "self", second = "other")
-            rcross = _Vec3_CROSS_STR.format(first = "other", second = "self")
+            cross = _Vec3_CROSS_STR.format(first="self", second="other")
+            rcross = _Vec3_CROSS_STR.format(first="other", second="self")
         case 4:
             cross_rtrn = "Vec4"
             cross = _Vec4_CROSS_STR
@@ -350,12 +383,13 @@ def generate_vec_ops(dim: Dim): # TODO: breakdown into sub functions esp for cro
         dim=dim,
         normalise=normalise,
         normalised=normalised,
-        dot=" + ".join(f"self.{a} * other[{i}]" for i,a in enumerate(chrs)),
+        dot=" + ".join(f"self.{a} * other[{i}]" for i, a in enumerate(chrs)),
         point=", ".join("float() | int()" for _ in chrs),
         cross_rtrn=cross_rtrn,
         cross=cross,
         rcross=rcross,
     )
+
 
 def generate_hash(dim: Dim):
     chrs = axis[:dim]
@@ -364,8 +398,9 @@ def generate_hash(dim: Dim):
         tpl=", ".join(f"self.{a}" for a in chrs),
         set=", ".join(f"o{a}" for a in chrs),
         eq=" and ".join(f"self.{a} == o{a}" for a in chrs),
-        ne=" or ".join(f"self.{a} != o{a}" for a in chrs)
+        ne=" or ".join(f"self.{a} != o{a}" for a in chrs),
     )
+
 
 def generate_sequence(dim: Dim):
     chrs = axis[:dim]
@@ -374,16 +409,18 @@ def generate_sequence(dim: Dim):
         s1=f"{chrs[0]}",
         other="\n".join(_SEQ_IDX_STR.format(a=a, i=i) for i, a in enumerate(chrs[1:], 1)),
         tpl=", ".join(f"self.{a}" for a in chrs),
-        iter="\n".join(_SEQ_ITER_STR.format(a=a) for a in chrs)
+        iter="\n".join(_SEQ_ITER_STR.format(a=a) for a in chrs),
     )
+
 
 def generate_types(dim: Dim):
     chrs = axis[:dim]
     return _TYPE_STR.format(
         dim=dim,
         args=", ".join(_REPR_STR.format(a=a) for a in chrs),
-        tpl=", ".join(_STR_STR.format(a=a) for a in chrs)
+        tpl=", ".join(_STR_STR.format(a=a) for a in chrs),
     )
+
 
 def generate_operation(dim: Dim, name: str, op: str, flip: bool = False):
     chrs = axis[:dim]
@@ -398,6 +435,7 @@ def generate_operation(dim: Dim, name: str, op: str, flip: bool = False):
         tpl = ", ".join(f"self.{a} {op} other[{i}]" for i, a in enumerate(chrs))
     return _OP_STR.format(name=name, dim=dim, vec=vec, sclr=sclr, point=point, tpl=tpl)
 
+
 def generate_inplace(dim: Dim, name: str, op: str):
     chrs = axis[:dim]
     point = ", ".join("float() | int()" for _ in chrs)
@@ -405,6 +443,7 @@ def generate_inplace(dim: Dim, name: str, op: str):
     sclr = "\n".join(_IOP_SET_STR.format(a=a, op=op, v="other") for a in chrs)
     tpl = "\n".join(_IOP_SET_STR.format(a=a, op=op, v=f"other[{i}]") for i, a in enumerate(chrs))
     return _IOP_STR.format(name=name, dim=dim, vec=vec, sclr=sclr, point=point, tpl=tpl)
+
 
 # Excludes MatMut as that operates on Matrices and not scalars
 _OPS = {
@@ -417,6 +456,7 @@ _OPS = {
     "pow": "**",
 }
 
+
 def generate_operations(dim: Dim):
     yield _SCALAR_STR.format(dim=dim, args=", ".join(f"-self.{a}" for a in axis[:dim]))
     for name, op in _OPS.items():
@@ -424,9 +464,11 @@ def generate_operations(dim: Dim):
         yield generate_operation(dim, f"r{name}", op, True)
         yield generate_inplace(dim, f"i{name}", op)
 
+
 def generate_swizzle(prop: str):
     return _SWIZ_STR.format(prop=prop, dim=len(prop), args=", ".join(f"self.{a}" for a in prop))
-    return f"    {prop} = property(lambda self: Vec{len(prop)}.new({", ".join(f"self.{a}" for a in prop)}))\n"
+    return f"    {prop} = property(lambda self: Vec{len(prop)}.new({', '.join(f'self.{a}' for a in prop)}))\n"
+
 
 def generate_swizzles(dim: Dim):
     yield f"\n    # -- SWIZZLE COMBINATIONS --\n"
@@ -437,10 +479,12 @@ def generate_swizzles(dim: Dim):
             yield generate_swizzle("".join(swizzle))
     yield "\n"
 
+
 def generate_swizzle_setter(prop: str):
     sclr = _SWIZ_EQ_STR.format(set=" = ".join(f"self.{a}" for a in prop))
     tpl = _SWIZ_EQ_STR.format(set=", ".join(f"self.{a}" for a in prop))
     return _SWIZ_SET_STR.format(prop=prop, dim=len(prop), sclr=sclr, tpl=tpl)
+
 
 def generate_swizzle_setters(dim: Dim):
     yield f"\n    # -- SWIZZLE SETTERS -- \n"
@@ -449,6 +493,7 @@ def generate_swizzle_setters(dim: Dim):
     for size in swizzles:
         for swizzle in size:
             yield from generate_swizzle_setter("".join(swizzle))
+
 
 def create_vector(location: str | Path, dim: Dim = 4, append: bool = False):
     text = (
@@ -462,17 +507,19 @@ def create_vector(location: str | Path, dim: Dim = 4, append: bool = False):
         *generate_types(dim),
         *generate_operations(dim),
         *generate_swizzles(dim),
-        *generate_swizzle_setters(dim)
+        *generate_swizzle_setters(dim),
     )
-    marker = f"{"a" if append else "w" }t"
+    marker = f"{'a' if append else 'w'}t"
     with open(location, marker) as fp:
         fp.writelines(text)
+
 
 def main():
     path = "vec.py" if len(argv) <= 1 else argv[1]
     create_vector(path, 2, False)
     create_vector(path, 3, True)
     create_vector(path, 4, True)
+
 
 if __name__ == "__main__":
     main()

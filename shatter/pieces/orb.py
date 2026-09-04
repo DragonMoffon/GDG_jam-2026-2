@@ -1,8 +1,9 @@
-from arcade import Sprite, SpriteList, draw_circle_outline
+from arcade import Sprite, SpriteList
 
 from resources import get_texture
-from shatter.collision import Collision, Circle, World, CollisionLayers
+from shatter.collision import Circle, Collision, CollisionLayers, World
 from shatter.linear import Vec2
+
 
 class Orb:
     STARTING_POTENTIAL: float = 600.0
@@ -15,7 +16,9 @@ class Orb:
         self.sprite: Sprite = Sprite(get_texture(Orb.SPRITE_TEXTURE), 1.0, position.x, position.y)
         self.sprite.depth = 48
         self.shadow: Sprite = Sprite(get_texture(Orb.SHADOW_TEXTURE), 1.0, position.x, position.y)
-        self.collider: Circle = Circle(CollisionLayers.ORB, CollisionLayers.ORB_MASK, position, Orb.ORB_RADIUS)
+        self.collider: Circle = Circle(
+            CollisionLayers.ORB, CollisionLayers.ORB_MASK, position, Orb.ORB_RADIUS
+        )
         self.collider.on_collision_enter = self.on_collision_enter
 
         self.velocity: Vec2 = Vec2(Orb.STARTING_POTENTIAL, 0.0)
@@ -47,6 +50,6 @@ class Orb:
                 self.collider.center -= collision.normal * collision.depth
                 self.velocity -= collision.normal * (2 * along)
         elif layer & CollisionLayers.GEMS:
-            pass # TODO
+            ...  # TODO
         elif layer & CollisionLayers.ORB_HAZARD:
-            pass # TODO
+            ...  # TODO

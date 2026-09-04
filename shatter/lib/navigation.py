@@ -59,6 +59,3 @@ class NavigationStack:
         self._stack[-1] = view
         self._names[-1] = name
         self._window.show_view(view)
-
-
-navigation = NavigationStack()
