@@ -1,4 +1,6 @@
 from pathlib import Path
+from json import load
+from typing import Any
 
 from arcade import SpriteSheet, Texture, load_font, load_spritesheet, load_texture
 
@@ -18,6 +20,9 @@ shaders: dict[str, Path] = {
     pth.stem: pth for pth in (root / "shaders").iterdir() if pth.suffix == ".glsl" and pth.is_file()
 }
 
+data: dict[str, Path] = {
+    pth.stem: pth for pth in (root / "data").iterdir() if pth.suffix == ".json" and pth.is_file()
+}
 
 def setup_resources():
     for font in fonts:
@@ -34,3 +39,7 @@ def get_spritesheet(name: str) -> SpriteSheet:
 
 def get_shader_path(name: str) -> Path:
     return shaders[name]
+
+def get_data(name: str) -> dict[str, Any]:
+    with open(data[name]) as fp:
+        return load(fp)

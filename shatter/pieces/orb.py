@@ -2,10 +2,12 @@ from arcade import Sprite, SpriteList
 
 from resources import get_texture
 from shatter.collision import Circle, Collision, CollisionLayers, World
+from shatter.context import GameLayers
 from shatter.linear import Vec2
+from shatter.pieces.piece import Piece
 
 
-class Orb:
+class Orb(Piece):
     STARTING_POTENTIAL: float = 600.0
     ORB_RADIUS = 48
     ORB_HEIGHT = 48
@@ -24,15 +26,15 @@ class Orb:
         self.velocity: Vec2 = Vec2(Orb.STARTING_POTENTIAL, 0.0)
         self.potential: float = Orb.STARTING_POTENTIAL
 
-    def attach(self, world: World, billboard: SpriteList, spritelist: SpriteList):
+    def attach(self, world: World, layers: GameLayers):
         world.add_collider(self.collider)
-        billboard.append(self.shadow)
-        billboard.append(self.sprite)
+        layers.shadows.append(self.shadow)
+        layers.pieces.append(self.sprite)
 
-    def detach(self, world: World, billboard: SpriteList, spritelist: SpriteList):
+    def detach(self, world: World, layers: GameLayers):
         world.rem_collider(self.collider)
-        billboard.remove(self.sprite)
-        billboard.remove(self.shadow)
+        layers.pieces.remove(self.sprite)
+        layers.shadows.remove(self.shadow)
 
     def update(self, dt: float):
         self.collider.center += self.velocity * dt
@@ -44,12 +46,9 @@ class Orb:
         if layer & CollisionLayers.ORB_REFLECTIVE:
             # TODO: MAKE JUICEY (HIT STOP, SCREEN SHAKE ETC)
             along = collision.normal.dot(self.velocity)
-            print(along)
             if along > 0:
                 # Move Orb to surface of object being collided with, and flip velocity parallel with collision
                 self.collider.center -= collision.normal * collision.depth
                 self.velocity -= collision.normal * (2 * along)
-        elif layer & CollisionLayers.GEMS:
-            ...  # TODO
         elif layer & CollisionLayers.ORB_HAZARD:
             ...  # TODO

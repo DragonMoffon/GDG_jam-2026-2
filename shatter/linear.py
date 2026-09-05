@@ -439,7 +439,7 @@ class Vec2(Sequence[float]):
     yyyy = property(lambda self: Vec4.new(self.y, self.y, self.y, self.y))
 
 
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -1025,7 +1025,7 @@ class Vec3(Sequence[float]):
     zzzz = property(lambda self: Vec4.new(self.z, self.z, self.z, self.z))
 
 
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:
@@ -1949,7 +1949,7 @@ class Vec4(Sequence[float]):
     wwww = property(lambda self: Vec4.new(self.w, self.w, self.w, self.w))
 
 
-    # -- SWIZZLE SETTERS -- 
+    # -- SWIZZLE SETTERS --
 
     @xy.setter  # type: ignore -- reportGeneralTypeIssues
     def xy(self, other: Point2 | float) -> None:

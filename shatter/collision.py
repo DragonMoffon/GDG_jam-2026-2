@@ -22,7 +22,7 @@ class Collider:
         self.type: type[Collider] = type(self)
         self.on_collision_enter: Callable[[Collision], None] = _nop
         self.on_collision_exit: Callable[[Collision], None] = _nop
-        self.on_collision: Callable[[Collision], None] = _nop
+        self.on_collision_stay: Callable[[Collision], None] = _nop
 
 
 @dataclass(slots=True)
@@ -54,12 +54,12 @@ class CollisionHistory:
 @dataclass(slots=True)
 class Line(Collider):
     center: Vec2
-    tangent: Vec2
+    normal: Vec2
     length: float
 
     @property
-    def normal(self) -> Vec2:
-        return Vec2.new(-self.tangent.y, self.tangent.x)
+    def tangent(self) -> Vec2:
+        return Vec2.new(self.normal.y, -self.normal.x)
 
     @property
     def radius(self) -> float:
@@ -109,9 +109,9 @@ def circle_plane_collision(a: Circle, b: Plane) -> Literal[False] | Collision:
 
 
 def line_circle_collision(a: Line, b: Circle) -> Literal[False] | Collision:
-    diff = a.center - a.center
+    diff = a.center - b.center
     length = abs(diff)
-    along = a.tangent.dot(diff)
+    along = a.normal.cross(diff)
     nabla = along**2 - length**2 + b.radius**2
 
     if nabla < 0:
@@ -129,7 +129,7 @@ def line_circle_collision(a: Line, b: Circle) -> Literal[False] | Collision:
     normal = a.normal
     separation = -normal @ diff
     abs_sep = abs(separation)
-    sign = separation / abs_sep
+    sign = 1 if abs_sep == 0 else separation / abs_sep
 
     return Collision(a, b, sign * normal, b.radius - abs_sep)
 
@@ -220,7 +220,7 @@ class World:
         for key, history in tuple(self.collisions.items()):
             if history.age == self.frame:
                 history.collider.on_collision_enter(history.collision)
-            history.collider.on_collision(history.collision)
+            history.collider.on_collision_stay(history.collision)
             if history.frame != self.frame:
                 history.collider.on_collision_exit(history.collision)
                 self.collisions.pop(key)
@@ -232,10 +232,9 @@ class CollisionLayers(IntFlag):
     PLAYER = 0b0000_0010
     MIRROR = 0b0000_0100
     ORB = 0b0000_1000
-    GEMS = 0b0001_0000
-    ORB_HAZARD = 0b0010_0000
-    PLAYER_HAZARD = 0b0100_0000
+    ORB_HAZARD = 0b0001_0000
+    PLAYER_HAZARD = 0b0010_0000
 
     PLAYER_MASK = GEOMETRY | ORB | PLAYER_HAZARD
     ORB_REFLECTIVE = GEOMETRY | MIRROR
-    ORB_MASK = ORB_REFLECTIVE | GEMS | ORB_HAZARD
+    ORB_MASK = ORB_REFLECTIVE | ORB_HAZARD

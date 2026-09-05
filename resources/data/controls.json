@@ -1,0 +1,83 @@
+{
+    "actions": [
+        {
+            "name": "Pause",
+            "mappings": [
+                {
+                    "input": 65307,
+                    "input_type": 0,
+                    "mod_shift": false,
+                    "mod_ctrl": false,
+                    "mod_alt": false
+                }
+            ]
+        },
+        {
+            "name": "Dash",
+            "mappings": [
+                {
+                    "input": 65505,
+                    "input_type": 0,
+                    "mod_shift": false,
+                    "mod_ctrl": false,
+                    "mod_alt": false
+                }
+            ]
+        },
+        {
+            "name": "Catch",
+            "mappings": [
+                {
+                    "input": 32,
+                    "input_type": 0,
+                    "mod_shift": false,
+                    "mod_ctrl": false,
+                    "mod_alt": false
+                }
+            ]
+        }
+    ],
+    "axes": [
+        {
+            "name": "MoveHorizontal",
+            "mappings": [
+                {
+                    "input": "leftx",
+                    "input_type": 4,
+                    "scale": 1.0
+                },
+                {
+                    "input": 100,
+                    "input_type": 0,
+                    "scale": 1.0
+                },
+                {
+                    "input": 97,
+                    "input_type": 0,
+                    "scale": -1.0
+                }
+            ]
+        },
+        {
+            "name": "MoveVertical",
+            "mappings": [
+                {
+                    "input": 115,
+                    "input_type": 0,
+                    "scale": -1.0
+                },
+                {
+                    "input": 119,
+                    "input_type": 0,
+                    "scale": 1.0
+                },
+                {
+                    "input": "lefty",
+                    "input_type": 4,
+                    "scale": 1.0
+                }
+            ]
+        }
+    ],
+    "controller_deadzone": 0.1
+}

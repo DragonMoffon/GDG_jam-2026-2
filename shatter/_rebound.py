@@ -48,7 +48,6 @@ class Projectile:
         y = sy + dt * dy
         speed = (dx**2 + dy**2) ** 0.5
         self._radius = radius = lerp(RADIUS_RANGE[0], RADIUS_RANGE[1], speed / MAX_SPEED)
-        print(self._radius)
 
         if x < radius - H_WIDTH:
             x = radius - H_WIDTH
