@@ -48,7 +48,7 @@ class Orb(Piece):
             along = collision.normal.dot(self.velocity)
             if along > 0:
                 # Move Orb to surface of object being collided with, and flip velocity parallel with collision
-                self.collider.center -= collision.normal * collision.depth
+                # self.collider.center -= collision.normal * collision.depth
                 self.velocity -= collision.normal * (2 * along)
         elif layer & CollisionLayers.ORB_HAZARD:
             ...  # TODO

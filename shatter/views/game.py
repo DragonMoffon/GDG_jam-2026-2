@@ -1,3 +1,5 @@
+from random import uniform
+
 from arcade import SpriteList, View, Rect, draw_point
 from arcade.camera import OrthographicProjector
 from arcade.future.input import ActionState
@@ -38,17 +40,20 @@ class GameView(View):
         self.player = Player()
         self.player.attach(self.world, self.render_layers)
 
+        self.orbs = tuple((Orb(Vec2(uniform(-200, 200), uniform(-200, 200))) for _ in range(10)))
+        for orb in self.orbs:
+            orb.attach(self.world, self.render_layers)
         self.orb = Orb(Vec2(0.0, 0.0))
         self.orb.attach(self.world, self.render_layers)
 
         for wall in get_walls(self.window.rect, self.camera):
             self.world.add_collider(wall)
 
-        print(self.player.mirror.collider.layer & self.orb.collider.mask)
-
     def on_update(self, delta_time: float) -> bool | None:
         self.player.update(delta_time)
         self.orb.update(delta_time)
+        for orb in self.orbs:
+            orb.update(delta_time)
         self.world.update()
 
     def on_draw(self) -> bool | None:
@@ -58,7 +63,6 @@ class GameView(View):
             self.render_layers.shadows.draw(pixelated=True)
             with self.window.ctx.enabled(self.window.ctx.DEPTH_TEST):
                 self.render_layers.pieces.draw(pixelated=True)
-            draw_point(self.player.mirror.collider.center.x, self.player.mirror.collider.center.y, (255, 0, 0), 10)
 
     def on_action(self, action: str, pressed: ActionState):
         if pressed == ActionState.PRESSED and action == Actions.Pause:

@@ -1,17 +1,17 @@
 from arcade import Sprite, SpriteList, draw_circle_outline
 from arcade.future.input import ActionState
 from math import atan2, degrees
-from arcade.types import Point2
 
 from resources import get_spritesheet, get_texture
-from shatter.collision import Circle, World, Line, CollisionLayers
-from shatter.linear import Vec2
+from shatter.collision import Circle, Collision, World, Line, CollisionLayers
+from shatter.linear import Vec2, Point2
 from shatter.context import GameLayers, Actions, Axis, get_axis
 from shatter.pieces.piece import Piece
 
 
 class Player(Piece):
-    SPEED = 100
+    SPEED = 600
+    MIRROR_DISTANCE = 60
 
     def __init__(self) -> None:
         sprite_sheet = get_spritesheet("Player_Body")
@@ -19,8 +19,11 @@ class Player(Piece):
         self.sprite: Sprite = Sprite(self.frames[0], 3)
         self.sprite.depth = 24
         self.shadow: Sprite = Sprite(get_texture("Player_Shadow"))
-        self.collider: Circle = Circle(CollisionLayers.PLAYER, CollisionLayers.PLAYER_HAZARD, Vec2(), 48)
+        self.collider: Circle = Circle(CollisionLayers.PLAYER, CollisionLayers.PLAYER_MASK, Vec2(), 16)
+        self.collider.on_collision_stay = self.on_collision_stay
         self.mirror: Mirror = Mirror()
+
+        self.mouse_position: Point2 = (0.0, 0.0)
 
         self.hozirontal: int = 0
         self.vertical: int = 0
@@ -51,7 +54,8 @@ class Player(Piece):
         self.sprite.position = self.collider.center.frozen
         self.shadow.position = self.collider.center.frozen
 
-        self.mirror.normal = (self.mirror.position - self.collider.center)
+        self.mirror.normal = (self.mouse_position - self.collider.center)
+        self.mirror.position = self.collider.center + self.mirror.normal * Player.MIRROR_DISTANCE
 
         self.mirror.update()
 
@@ -59,7 +63,14 @@ class Player(Piece):
         pass
 
     def on_mouse_motion(self, x: float, y: float):
-        self.mirror.position = (x, y)
+        self.mouse_position = (x, y)
+        self.mirror.normal = (self.mouse_position - self.collider.center)
+        self.mirror.position = self.collider.center + self.mirror.normal * Player.MIRROR_DISTANCE
+
+    def on_collision_stay(self, collision: Collision):
+        layer = collision.b.layer
+        if layer & CollisionLayers.GEOMETRY:
+            self.position = self.position - collision.normal * collision.depth
 
     @property
     def position(self) -> Vec2:
@@ -70,6 +81,8 @@ class Player(Piece):
         self.collider.center.xy = pos
         self.shadow.position = self.collider.center.frozen
         self.sprite.position = self.collider.center.frozen
+        self.mirror.normal = (self.mouse_position - self.collider.center)
+        self.mirror.position = self.collider.center + self.mirror.normal * Player.MIRROR_DISTANCE
 
 
 class Mirror(Piece):
