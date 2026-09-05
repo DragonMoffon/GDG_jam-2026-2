@@ -51,6 +51,7 @@ from typing import Literal, overload
 _CLS_STR = """type Point{dim} = Vec{dim} | tuple[{tpl}]
 class Vec{dim}(Sequence[float]):
     __slots__ = {chrs}
+
 """
 _INIT_NONE_STR = "{depth}if {none}:\n{depth}    {eq} = {a}\n{depth}    return\n"
 _INIT_SCLR_STR = "{depth}{el}if isinstance({a}, float) or isinstance({a}, int):\n"
@@ -278,6 +279,9 @@ def get_init_combinations(dim: Dim):
     )  # Ranges for each unique combination
     return (_chop(rng) for rng in rngs)
 
+def generate_none_init_overload(dim: int):
+    yield f"    @overload\n"
+    yield f"    def __init__(self, {axis[0]}: float = 0.0, {', '.join(f"{a}: None = None" for a in axis[1:dim])}): ...\n"
 
 def generate_init_overload(combination: Iterable[str]):
     yield f"    @overload\n"
@@ -332,6 +336,7 @@ def get_init_branches(dim: Dim, combinations: Iterable[Iterable[str]]):
 
 def generate_init(dim: Dim):
     combinations = get_init_combinations(dim)
+    yield from generate_none_init_overload(dim)
     for combination in combinations:
         yield from generate_init_overload(combination)
 
